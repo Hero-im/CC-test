@@ -19,23 +19,26 @@ export default async function handler(req, res) {
     (예: '창업도 유소가' -> '창업의 요소가', '엔터 엔터프라이즈' -> '앙트레프레너' 등)
     원본의 의미는 절대 훼손하지 말고 자연스러운 문장으로만 다듬어서 결과만 출력해 주세요.
     \n\n원본 데이터:\n${text}`;
+// 기존 api/correct.js 내용 중 fetch 통신하는 부분(try 블록 내부)을 이렇게 수정합니다.
 
-    try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
-            })
-        });
-        
-        const data = await response.json();
-        
-        // AI가 답변한 교정된 텍스트 추출
-        const fixedText = data.candidates[0].content.parts[0].text;
-        
-        // 프론트엔드로 결과 반환 (성공 코드 200)
-        res.status(200).json({ result: fixedText });
+try {
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }]
+        })
+    });
+    
+    // 이 두 줄을 추가해서 429 에러(한도 초과)를 콕 집어냅니다!
+    if (response.status === 429) {
+        return res.status(429).json({ error: '오늘 AI 분석 토큰이 모두 소진되었습니다. 내일 다시 이용해 주세요! 🥲' });
+    }
+    
+    const data = await response.json();
+    const fixedText = data.candidates[0].content.parts[0].text;
+    
+    res.status(200).json({ result: fixedText });
         
     } catch (error) {
         console.error(error);
