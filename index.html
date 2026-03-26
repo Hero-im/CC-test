@@ -6,76 +6,42 @@
     <title>자막 추출 & AI 교정기</title>
     <style>
         /* 기본 배경 및 폰트 설정 */
-        body {
-            font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
-            margin: 0;
-            padding: 40px 20px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .container {
-            background-color: #ffffff;
-            width: 100%;
-            max-width: 800px;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
-        }
-
+        body { font-family: 'Pretendard', 'Malgun Gothic', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 40px 20px; display: flex; justify-content: center; }
+        .container { background-color: #ffffff; width: 100%; max-width: 800px; padding: 40px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05); }
         h2 { margin-top: 0; color: #2c3e50; font-size: 24px; border-bottom: 2px solid #edf2f7; padding-bottom: 15px; margin-bottom: 25px; }
-        h3 { font-size: 18px; color: #4a5568; margin-top: 35px; margin-bottom: 15px; }
+        
+        /* 결과 영역 헤더 (제목과 다운로드 버튼을 나란히 배치) */
+        .result-header { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 35px; margin-bottom: 15px; }
+        .result-header h3 { font-size: 18px; color: #4a5568; margin: 0; }
+        
         label.main-label { display: block; font-size: 14px; font-weight: bold; color: #4a5568; margin-bottom: 8px; }
 
-        textarea {
-            width: 100%; height: 200px; padding: 15px; box-sizing: border-box;
-            border: 1px solid #cbd5e0; border-radius: 8px; font-family: inherit;
-            font-size: 15px; line-height: 1.6; resize: vertical; background-color: #f8fafc;
-            transition: border-color 0.3s ease, background-color 0.3s ease;
-        }
+        textarea { width: 100%; height: 200px; padding: 15px; box-sizing: border-box; border: 1px solid #cbd5e0; border-radius: 8px; font-family: inherit; font-size: 15px; line-height: 1.6; resize: vertical; background-color: #f8fafc; transition: border-color 0.3s ease, background-color 0.3s ease; }
         textarea:focus { outline: none; border-color: #3182ce; background-color: #ffffff; }
 
         /* 체크박스 영역 스타일 */
-        .option-area {
-            margin-top: 15px;
-            padding: 15px;
-            background-color: #ebf8fa;
-            border-radius: 8px;
-            border: 1px solid #b2ebf2;
-            display: flex;
-            align-items: center;
-        }
+        .option-area { margin-top: 15px; padding: 15px; background-color: #ebf8fa; border-radius: 8px; border: 1px solid #b2ebf2; display: flex; align-items: center; }
         .option-area input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; margin-right: 10px; }
         .option-area label { font-size: 15px; color: #00838f; cursor: pointer; user-select: none; font-weight: bold; }
 
-        button {
-            width: 100%; padding: 16px; background-color: #3182ce; color: white; border: none;
-            border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
-            margin-top: 20px; transition: background-color 0.2s ease, transform 0.1s ease;
-        }
-        button:hover { background-color: #2b6cb0; }
-        button:active { transform: scale(0.98); }
+        /* 추출 시작 버튼 */
+        .submit-btn { width: 100%; padding: 16px; background-color: #3182ce; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; transition: background-color 0.2s ease, transform 0.1s ease; }
+        .submit-btn:hover { background-color: #2b6cb0; }
+        .submit-btn:active { transform: scale(0.98); }
+
+        /* TXT 다운로드 버튼 (초록색 포인트) */
+        .download-btn { background-color: #48bb78; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background-color 0.2s ease; }
+        .download-btn:hover { background-color: #38a169; }
+        .download-btn:active { transform: scale(0.95); }
 
         #statusMsg { margin-top: 15px; font-size: 14px; color: #718096; text-align: center; min-height: 20px; font-weight: bold; }
 
         /* 로딩바 애니메이션 스타일 */
         #loadingArea { display: none; margin-top: 20px; }
-        .progress-bar-container {
-            width: 100%; height: 10px; background-color: #e2e8f0; border-radius: 5px; overflow: hidden; position: relative;
-        }
-        .progress-bar {
-            width: 30%; height: 100%; background-color: #3182ce; border-radius: 5px;
-            position: absolute; left: -30%;
-            animation: loading 1.5s infinite ease-in-out; /* 로딩바가 좌우로 움직이는 애니메이션 */
-        }
-        @keyframes loading {
-            0% { left: -30%; }
-            100% { left: 100%; }
-        }
+        .progress-bar-container { width: 100%; height: 10px; background-color: #e2e8f0; border-radius: 5px; overflow: hidden; position: relative; }
+        .progress-bar { width: 30%; height: 100%; background-color: #3182ce; border-radius: 5px; position: absolute; left: -30%; animation: loading 1.5s infinite ease-in-out; }
+        @keyframes loading { 0% { left: -30%; } 100% { left: 100%; } }
         .timer-text { text-align: center; font-size: 13px; color: #a0aec0; margin-top: 8px; }
-
     </style>
 </head>
 <body>
@@ -91,7 +57,7 @@
             <label for="useAI">🤖 AI 문맥 교정 기능 사용하기 (시간이 조금 더 걸립니다)</label>
         </div>
         
-        <button id="submitBtn" onclick="processSubtitles()">자막 추출 시작</button>
+        <button id="submitBtn" class="submit-btn" onclick="processSubtitles()">자막 추출 시작</button>
         <p id="statusMsg"></p>
 
         <div id="loadingArea">
@@ -101,7 +67,10 @@
             <p class="timer-text">예상 소요 시간: 5~15초 (텍스트 길이에 비례) ... <span id="secondsCount">0</span>초 경과</p>
         </div>
         
-        <h3>2. 최종 결과</h3>
+        <div class="result-header">
+            <h3>2. 최종 결과</h3>
+            <button class="download-btn" onclick="downloadTxt()">💾 TXT 파일로 저장</button>
+        </div>
         <textarea id="textOutput" placeholder="추출(또는 교정)된 자막이 여기에 표시됩니다." readonly></textarea>
     </div>
 
@@ -110,7 +79,7 @@
             const inputData = document.getElementById('jsonInput').value;
             const outputArea = document.getElementById('textOutput');
             const statusMsg = document.getElementById('statusMsg');
-            const useAI = document.getElementById('useAI').checked; // 체크박스 상태 확인
+            const useAI = document.getElementById('useAI').checked; 
             
             const loadingArea = document.getElementById('loadingArea');
             const secondsCount = document.getElementById('secondsCount');
@@ -122,28 +91,23 @@
             }
 
             try {
-                // 1. JSON 추출 (무조건 실행)
                 statusMsg.innerText = "⏳ 1단계: 자막 텍스트를 추출하는 중...";
                 const parsedData = JSON.parse(inputData);
                 const extractedText = parsedData.map(item => item.Caption).join(' ');
 
-                // 만약 사용자가 체크박스를 껐다면, AI 서버 통신 없이 바로 출력 후 종료
                 if (!useAI) {
                     outputArea.value = extractedText;
                     statusMsg.innerText = "✅ 텍스트 추출 완료! (AI 교정 생략됨)";
                     return;
                 }
 
-                // --- 여기서부터 AI 교정 로직 시작 ---
-                outputArea.value = ""; // 기존 결과 지우기
+                outputArea.value = ""; 
                 statusMsg.innerText = "🚀 2단계: AI가 문맥을 분석하여 교정하는 중...";
                 
-                // UI 잠금 및 로딩바 표시
                 submitBtn.disabled = true;
                 submitBtn.style.backgroundColor = "#a0aec0";
                 loadingArea.style.display = "block";
                 
-                // 초시계 타이머 시작
                 let seconds = 0;
                 secondsCount.innerText = seconds;
                 const timerInterval = setInterval(() => {
@@ -151,14 +115,12 @@
                     secondsCount.innerText = seconds;
                 }, 1000);
 
-                // 서버 통신
                 const response = await fetch('/api/correct', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text: extractedText })
                 });
 
-                // 통신이 끝나면 타이머 멈추고 로딩바 숨김, 버튼 복구
                 clearInterval(timerInterval);
                 loadingArea.style.display = "none";
                 submitBtn.disabled = false;
@@ -166,7 +128,7 @@
 
                 if (response.status === 429) {
                     statusMsg.innerText = "❌ 오늘 AI 무료 사용량이 모두 소진되었습니다. 내일 다시 이용해 주세요! (원본 텍스트를 대신 출력합니다)";
-                    outputArea.value = extractedText; // 아쉬운 대로 교정 안 된 원본이라도 띄워줌
+                    outputArea.value = extractedText; 
                     return;
                 }
 
@@ -177,13 +139,50 @@
                     statusMsg.innerText = `✅ AI 교정이 완료되었습니다! (총 ${seconds}초 소요)`;
                 } else {
                     statusMsg.innerText = "❌ 오류 발생: " + resultData.error;
-                    outputArea.value = extractedText; // 에러 났을 때도 원본은 보여주기
+                    outputArea.value = extractedText; 
                 }
 
             } catch (error) {
                 statusMsg.innerText = "❌ 오류: JSON 형식이 잘못되었거나 서버와 통신할 수 없습니다.";
                 console.error(error);
             }
+        }
+
+        // --- 새롭게 추가된 TXT 다운로드 기능 ---
+        function downloadTxt() {
+            const text = document.getElementById('textOutput').value;
+            
+            if (!text.trim()) {
+                alert("저장할 내용이 없습니다. 먼저 자막을 추출해 주세요!");
+                return;
+            }
+
+            // 파일명에 들어갈 현재 날짜/시간 만들기 (예: 20260327_1530)
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            
+            const filename = `강의자막_${year}${month}${day}_${hours}${mins}.txt`;
+
+            // 텍스트 데이터를 Blob 객체로 변환하여 가상 URL 생성
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = window.URL.createObjectURL(blob);
+            
+            // 보이지 않는 <a> 태그를 만들어 강제로 클릭 이벤트 발생
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            
+            document.body.appendChild(a);
+            a.click();
+            
+            // 다운로드 후 브라우저 메모리 정리
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
         }
     </script>
 </body>
