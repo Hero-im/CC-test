@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lecture Subtitle Studio</title>
+    <title>Lecture 자막파일 추출기</title>
     <style>
         /* 웹폰트 적용 (Pretendard) */
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -189,7 +189,7 @@
         </section>
     </main>
 
-    <script>
+ <script>
         async function processSubtitles() {
             const inputData = document.getElementById('jsonInput').value;
             const outputArea = document.getElementById('textOutput');
@@ -268,35 +268,59 @@
             }
         }
 
-        function downloadTxt() {
+        // --- 업그레이드된 "다른 이름으로 저장" 기능 ---
+        async function downloadTxt() {
             const text = document.getElementById('textOutput').value;
             if (!text.trim()) {
                 alert("저장할 텍스트가 없습니다.");
                 return;
             }
 
+            // 기본 추천 파일명 생성
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const day = String(now.getDate()).padStart(2, '0');
             const hours = String(now.getHours()).padStart(2, '0');
             const mins = String(now.getMinutes()).padStart(2, '0');
-            
-            const filename = `Lecture_Subtitle_${year}${month}${day}_${hours}${mins}.txt`;
+            const defaultFilename = `강의자막_${year}${month}${day}_${hours}${mins}.txt`;
 
-            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-            const url = window.URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = filename;
-            
-            document.body.appendChild(a);
-            a.click();
-            
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+            try {
+                // 크롬, 엣지 등 최신 브라우저: "다른 이름으로 저장" 창 띄우기
+                if ('showSaveFilePicker' in window) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: defaultFilename,
+                        types: [{
+                            description: '텍스트 파일',
+                            accept: { 'text/plain': ['.txt'] },
+                        }],
+                    });
+                    
+                    // 사용자가 선택한 위치에 파일 쓰기
+                    const writable = await handle.createWritable();
+                    await writable.write(text);
+                    await writable.close();
+                } 
+                // 사파리나 구형 브라우저: 기존 다운로드 방식(Fallback) 제공
+                else {
+                    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = defaultFilename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                }
+            } catch (error) {
+                // 사용자가 저장 창에서 '취소'를 누른 경우는 에러 메시지를 띄우지 않음
+                if (error.name !== 'AbortError') {
+                    console.error("파일 저장 중 오류:", error);
+                    alert("파일을 저장하는 중 문제가 발생했습니다.");
+                }
+            }
         }
     </script>
 </body>
