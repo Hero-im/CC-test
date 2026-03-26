@@ -139,13 +139,9 @@
                 const parsedData = JSON.parse(inputData);
                 const extractedText = parsedData.map(item => item.Caption).join(' ');
 
-                // 2. Vercel 백엔드 서버로 AI 교정 요청 (현재는 뼈대 상태)
-                statusMsg.innerText = "🚀 2단계: AI가 문맥을 분석하여 오탈자를 교정하는 중... (수 초 정도 소요됩니다)";
+                // 2. Vercel 백엔드 서버로 AI 교정 요청 (봉인 해제!)
+                statusMsg.innerText = "🚀 2단계: AI가 문맥을 분석하여 교정하는 중... (잠시만 기다려주세요)";
                 
-                // 실제 서버가 구축되기 전까지 테스트할 수 있도록, 
-                // 아래 fetch 통신 부분은 주석 처리하고 임시로 원본 추출 텍스트만 띄우겠습니다.
-                
-                /* // ---- 백엔드 완성 후 이 주석을 푸세요 ----
                 const response = await fetch('/api/correct', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -155,21 +151,17 @@
                 const resultData = await response.json();
 
                 if (response.ok) {
+                    // 성공 시 AI가 다듬은 텍스트를 화면에 출력
                     outputArea.value = resultData.result;
-                    statusMsg.innerText = "✅ 교정이 완료되었습니다!";
+                    statusMsg.innerText = "✅ AI 교정이 완료되었습니다!";
                 } else {
+                    // 백엔드에서 에러를 뱉었을 때
                     statusMsg.innerText = "❌ 오류 발생: " + resultData.error;
                 }
-                */
-
-                // 임시 출력 코드 (서버 붙이기 전 테스트용)
-                setTimeout(() => {
-                    outputArea.value = extractedText;
-                    statusMsg.innerText = "✅ 텍스트 추출 완료! (AI 서버 연동 대기 중)";
-                }, 1000);
 
             } catch (error) {
-                statusMsg.innerText = "❌ 오류: JSON 형식이 잘못되었거나 복사 과정에서 문제가 발생했습니다.";
+                statusMsg.innerText = "❌ 오류: JSON 형식이 잘못되었거나 서버와 통신할 수 없습니다.";
+                console.error(error);
             }
         }
     </script>
