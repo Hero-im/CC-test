@@ -138,6 +138,65 @@
             main { grid-template-columns: 1fr; padding: 1rem; }
             textarea { min-height: 250px; }
         }
+
+        /* --- 커스텀 툴팁(말풍선) 스타일 --- */
+        .tooltip-wrapper {
+            position: relative;
+        }
+        
+        /* 말풍선 몸통 */
+        .tooltip-wrapper::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(0px);
+            background-color: #1f2937; /* 진한 바탕 */
+            color: #f9fafb;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            line-height: 1.5;
+            width: 270px; /* 말풍선 너비 */
+            text-align: center;
+            word-break: keep-all; /* 단어 단위로 깔끔하게 줄바꿈 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        /* 말풍선 아래쪽 뾰족한 꼬리 */
+        .tooltip-wrapper::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            border-width: 6px;
+            border-style: solid;
+            border-color: #1f2937 transparent transparent transparent;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        /* 마우스 호버 시 위로 스르륵 나타나는 애니메이션 */
+        .tooltip-wrapper:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-12px);
+        }
+        .tooltip-wrapper:hover::before {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -157,14 +216,13 @@
             <textarea id="jsonInput" placeholder='여기에 Network 탭에서 복사한 데이터를 붙여넣으세요.&#10;&#10;예시:&#10;[&#10;  { "Caption": "첫 번째 자막입니다..." },&#10;  { "Caption": "두 번째 자막입니다..." }&#10;]'></textarea>
             
             <div class="controls">
-                <label class="toggle-container">
+           <label class="toggle-container tooltip-wrapper" data-tooltip="자막파일 내부에 중간중간 실제 영상의 대사와 다른 단어가 있거나 문맥에 맞지 않는 잘못된 문장을 AI가 분석하여 교정합니다.">
                     <div class="switch">
                         <input type="checkbox" id="useAI" checked>
                         <span class="slider"></span>
                     </div>
                     <span class="toggle-label">AI 문맥 교정 켜기</span>
                 </label>
-                
                 <button id="submitBtn" class="btn btn-primary" onclick="processSubtitles()">
                     <span id="btnText">자막 추출 시작</span>
                 </button>
