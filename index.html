@@ -139,7 +139,7 @@
             textarea { min-height: 250px; }
         }
 
-        /* --- 커스텀 툴팁(말풍선) 스타일 --- */
+        /* --- 커스텀 툴팁(말풍선) 스타일 (잘림 현상 수정) --- */
         .tooltip-wrapper {
             position: relative;
         }
@@ -149,18 +149,18 @@
             content: attr(data-tooltip);
             position: absolute;
             bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%) translateY(0px);
-            background-color: #1f2937; /* 진한 바탕 */
+            left: -10px; /* 말풍선이 잘리지 않도록 버튼보다 살짝만 왼쪽에서 시작 */
+            transform: translateY(0px); /* 기존에 있던 translateX(-50%) 제거 */
+            background-color: #1f2937; 
             color: #f9fafb;
             padding: 10px 14px;
             border-radius: 8px;
             font-size: 0.8rem;
             font-weight: 500;
             line-height: 1.5;
-            width: 270px; /* 말풍선 너비 */
-            text-align: center;
-            word-break: keep-all; /* 단어 단위로 깔끔하게 줄바꿈 */
+            width: 270px; 
+            text-align: left; /* 텍스트도 읽기 편하게 좌측 정렬로 변경 */
+            word-break: keep-all; 
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             opacity: 0;
             visibility: hidden;
@@ -174,8 +174,8 @@
             content: '';
             position: absolute;
             bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%) translateY(10px);
+            left: 20px; /* 꼬리가 엉뚱한 곳에 있지 않고 정확히 토글 스위치를 가리키도록 고정 */
+            transform: translateY(10px); /* 기존에 있던 translateX(-50%) 제거 */
             border-width: 6px;
             border-style: solid;
             border-color: #1f2937 transparent transparent transparent;
@@ -190,12 +190,12 @@
         .tooltip-wrapper:hover::after {
             opacity: 1;
             visibility: visible;
-            transform: translateX(-50%) translateY(-12px);
+            transform: translateY(-12px);
         }
         .tooltip-wrapper:hover::before {
             opacity: 1;
             visibility: visible;
-            transform: translateX(-50%) translateY(-2px);
+            transform: translateY(-2px);
         }
     </style>
 </head>
