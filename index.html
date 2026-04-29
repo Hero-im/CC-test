@@ -266,112 +266,107 @@
                 Notification.requestPermission();
             }
 
-            // 💡 [핵심 수정 1] 사용자가 입력한 JSON 검사만 따로 빼서 먼저 실행합니다.
+            // 1. JSON 검사 및 텍스트 추출
+            let parsedData = [];
             let extractedText = "";
             try {
-                statusMsg.innerText = "🔍 JSON 파일 분석 및 텍스트 추출 중...";
-                const parsedData = JSON.parse(inputData);
+                parsedData = JSON.parse(inputData);
                 extractedText = parsedData.map(item => item.Caption).join(' ');
             } catch (error) {
-                // 여기서 에러가 나면 진짜로 사용자가 넣은 데이터에 문제가 있는 것입니다.
                 statusMsg.innerText = "❌ 입력된 데이터가 올바른 JSON 형식이 아닙니다.";
-                console.error("JSON 파싱 에러:", error);
-                return; // 통신하지 않고 여기서 멈춤
+                return;
             }
 
-            // AI 옵션이 꺼져있다면 원본 텍스트만 출력하고 종료
             if (!useAI) {
                 outputArea.value = extractedText;
                 statusMsg.innerText = "✅ 텍스트 추출 완료! (AI 교정 생략됨)";
                 return;
             }
 
-            // --- 여기서부터 서버 통신 (AI 교정) 시작 ---
+            // --- AI 대용량 분할 교정 시작 ---
             outputArea.value = ""; 
             submitBtn.disabled = true;
             btnText.innerText = "처리 중...";
             loader.style.display = "block";
             
             let startTime = Date.now();
-            let seconds = 0;
-            let messageIndex = 0;
+            let finalCorrectedText = "";
+            let processedChunks = 0;
             
-            const loadingMessages = [
-                "🔍 JSON 파일에서 자막 텍스트 추출 완료...",
-                "🤖 AI 문맥 분석 모델 가동 중...",
-                "🧐 문장 간의 개연성 및 흐름 파악 중...",
-                "✍️ 어색한 단어 및 잘못 인식된 오탈자 찾아내는 중...",
-                "✨ 문맥에 맞게 자연스러운 문장으로 교정 중...",
-                "🚀 분량이 많아 평소보다 조금 더 시간이 걸리고 있습니다..."
-            ];
-
-            statusMsg.innerText = loadingMessages[0];
-
-            const loadingInterval = setInterval(() => {
-                seconds++;
-                if (seconds % 2 === 0 && messageIndex < loadingMessages.length - 1) {
-                    messageIndex++;
-                    statusMsg.innerText = loadingMessages[messageIndex];
-                }
-            }, 1000); 
+            // 💡 한 번에 보낼 자막 묶음 개수 (40개 = 약 2~3분 분량씩 쪼개서 전송)
+            const CHUNK_SIZE = 40; 
+            const totalChunks = Math.ceil(parsedData.length / CHUNK_SIZE);
 
             try {
-                const response = await fetch('/api/correct', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: extractedText })
-                });
+                for (let i = 0; i < totalChunks; i++) {
+                    // 데이터를 CHUNK_SIZE 만큼 자르기
+                    const chunk = parsedData.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+                    const chunkText = chunk.map(item => item.Caption).join(' ');
 
-                // 통신이 끝났으므로 로딩바와 타이머를 멈춥니다.
-                clearInterval(loadingInterval);
+                    // 퍼센테이지 계산 및 UI 업데이트
+                    let percent = Math.round((i / totalChunks) * 100);
+                    statusMsg.innerText = `🤖 대용량 텍스트 분석 중... (${percent}% 완료) - 총 ${totalChunks}구간 중 ${i+1}번째`;
+
+                    // 서버로 조각난 텍스트 전송
+                    const response = await fetch('/api/correct', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: chunkText })
+                    });
+
+                    if (response.status === 429) throw new Error("AI 무료 사용량 초과");
+                    if (!response.ok) throw new Error(`서버 불안정 (${response.status})`);
+
+                    const resultData = await response.json();
+                    
+                    if (resultData.result) {
+                        // 결과값을 기존 텍스트에 이어붙이기
+                        finalCorrectedText += resultData.result + " ";
+                        
+                        // 💡 사용자가 덜 심심하게 완료된 부분까지 화면에 실시간으로 쏴주기
+                        outputArea.value = finalCorrectedText; 
+                        outputArea.scrollTop = outputArea.scrollHeight; // 스크롤 맨 아래로 자동 이동
+                        
+                        processedChunks++;
+                    } else {
+                        throw new Error("서버 응답값 없음");
+                    }
+                }
+
+                // 모든 조각이 에러 없이 완료되었을 때
+                let timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
+                statusMsg.innerText = `✅ 대용량 AI 교정 완료! (총 소요시간: ${timeTaken}초)`;
                 submitBtn.disabled = false;
                 btnText.innerText = "자막 추출 시작";
                 loader.style.display = "none";
-                
-                let timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
 
-                // 할당량 초과 에러
-                if (response.status === 429) {
-                    statusMsg.innerText = "❌ 일일 사용량 초과: 원본 텍스트를 출력합니다.";
-                    outputArea.value = extractedText; 
-                    return;
-                }
-
-                // 💡 [핵심 수정 2] 서버 통신 자체가 실패했을 때 (예: 504 Timeout) 엉뚱한 에러를 띄우지 않도록 차단
-                if (!response.ok) {
-                    throw new Error(`상태 코드 ${response.status}`);
-                }
-
-                const resultData = await response.json();
-
-                if (resultData.result) {
-                    outputArea.value = resultData.result;
-                    statusMsg.innerText = `✅ AI 교정 완료 (총 소요시간: ${timeTaken}초)`;
-
-                    if ("Notification" in window && Notification.permission === "granted") {
-                        const notification = new Notification("✨ 자막 교정 완료!", {
-                            body: `AI가 자막 교정을 모두 끝마쳤습니다.\n소요시간: ${timeTaken}초\n클릭하여 결과를 확인하세요!`,
-                            icon: "https://cdn-icons-png.flaticon.com/512/2065/2065157.png" 
-                        });
-                        notification.onclick = function() { window.focus(); };
-                    }
-                } else {
-                    throw new Error("서버에서 결과값을 받지 못했습니다.");
+                // 데스크탑 팝업 알림
+                if ("Notification" in window && Notification.permission === "granted") {
+                    const notification = new Notification("✨ 자막 교정 완료!", {
+                        body: `긴 영상의 자막 교정을 모두 끝마쳤습니다.\n소요시간: ${timeTaken}초`,
+                        icon: "https://cdn-icons-png.flaticon.com/512/2065/2065157.png" 
+                    });
+                    notification.onclick = function() { window.focus(); };
                 }
 
             } catch (error) {
-                clearInterval(loadingInterval);
+                // 💡 만약 중간에 에러가 나더라도, 지금까지 교정한 데이터는 살리고 남은 부분만 원본으로 채워주는 철통 방어 로직
                 submitBtn.disabled = false;
                 btnText.innerText = "자막 추출 시작";
                 loader.style.display = "none";
                 
-                // 에러 발생 시 원본 텍스트를 먼저 띄워주고, 정확한 에러 원인을 아래에 적어줍니다.
-                statusMsg.innerText = `❌ 서버 통신 오류 (${error.message}) : 대신 원본을 출력합니다.`;
-                outputArea.value = extractedText; 
-                console.error("서버 통신 에러:", error);
+                statusMsg.innerText = `⚠️ 통신 불안정 (${error.message}) : 중단된 이후 시점부터는 원본으로 대체합니다.`;
+                
+                // 아직 처리 못한 남은 원본 데이터 가져오기
+                const remainingData = parsedData.slice(processedChunks * CHUNK_SIZE);
+                const remainingText = remainingData.map(item => item.Caption).join(' ');
+                
+                outputArea.value = finalCorrectedText + "\n\n--- [아래부터는 서버 오류로 인한 원본 텍스트입니다] ---\n\n" + remainingText; 
+                console.error("교정 중단 에러:", error);
             }
         }
 
+        // --- 다운로드 함수 (이전과 완벽히 동일) ---
         async function downloadTxt() {
             const text = document.getElementById('textOutput').value;
             if (!text.trim()) {
