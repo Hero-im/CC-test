@@ -86,6 +86,53 @@
         textarea::-webkit-scrollbar-track { background: transparent; }
         textarea::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
 
+        /* 결과 출력 영역 (HTML 렌더링용 div) */
+        .text-output-display {
+            flex: 1;
+            width: 100%;
+            min-height: 400px;
+            padding: 1.5rem;
+            border: none;
+            font-family: inherit;
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #374151;
+            background-color: #ffffff;
+            overflow-y: auto;
+            word-break: break-word;
+        }
+        .text-output-display::-webkit-scrollbar { width: 8px; }
+        .text-output-display::-webkit-scrollbar-track { background: transparent; }
+        .text-output-display::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
+        .placeholder-text { color: #9ca3af; }
+
+        /* 교정된 단어 강조 */
+        .corrected-word {
+            color: #ef4444;
+            font-weight: 700;
+            cursor: help;
+            border-bottom: 1.5px dashed #ef4444;
+        }
+
+        /* 교정 툴팁 */
+        .correction-tooltip {
+            position: fixed;
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 1000;
+            max-width: 260px;
+            white-space: pre;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15);
+        }
+        .correction-tooltip.visible { opacity: 1; }
+
         /* 하단 컨트롤 바 */
         .controls {
             padding: 1rem 1.5rem;
@@ -236,7 +283,9 @@
                     💾 TXT 다운로드
                 </button>
             </div>
-            <textarea id="textOutput" placeholder="추출 및 교정된 텍스트가 이곳에 정리되어 나타납니다." readonly></textarea>
+            <div id="textOutput" class="text-output-display"><span class="placeholder-text">추출 및 교정된 텍스트가 이곳에 정리되어 나타납니다.</span></div>
+            <textarea id="textOutputRaw" style="display:none"></textarea>
+            <div id="correctionTooltip" class="correction-tooltip"></div>
             
             <div class="controls" style="justify-content: flex-start;">
                 <div class="status-wrapper">
@@ -248,11 +297,51 @@
     </main>
 
 <script>
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function parseAndRender(aiText) {
+            // <<원본::교정>> 마커 파싱
+            const regex = /<<([^:>]+)::([^>]+)>>/g;
+            let plainText = '';
+            let htmlParts = [];
+            let lastIndex = 0;
+            let match;
+
+            while ((match = regex.exec(aiText)) !== null) {
+                const before = aiText.slice(lastIndex, match.index);
+                const original = match[1].trim();
+                const corrected = match[2].trim();
+
+                plainText += before + corrected;
+                if (before) htmlParts.push(escapeHtml(before).replace(/\n/g, '<br>'));
+                htmlParts.push(`<span class="corrected-word" data-original="${escapeHtml(original)}" data-corrected="${escapeHtml(corrected)}">${escapeHtml(corrected)}</span>`);
+                lastIndex = match.index + match[0].length;
+            }
+
+            const remaining = aiText.slice(lastIndex);
+            plainText += remaining;
+            if (remaining) htmlParts.push(escapeHtml(remaining).replace(/\n/g, '<br>'));
+
+            // 마커가 없으면(AI가 교정 없다고 판단) 그냥 원문 표시
+            const html = htmlParts.length > 0
+                ? htmlParts.join('')
+                : escapeHtml(aiText).replace(/\n/g, '<br>');
+
+            return { plainText: plainText || aiText, html };
+        }
+
         async function processSubtitles() {
             const inputData = document.getElementById('jsonInput').value;
             const outputArea = document.getElementById('textOutput');
+            const rawOutput = document.getElementById('textOutputRaw');
             const statusMsg = document.getElementById('statusMsg');
-            const useAI = document.getElementById('useAI').checked; 
+            const useAI = document.getElementById('useAI').checked;
             const submitBtn = document.getElementById('submitBtn');
             const btnText = document.getElementById('btnText');
             const loader = document.getElementById('loader');
@@ -278,19 +367,20 @@
             // AI 옵션이 꺼져있을 경우 전체 원본 텍스트 추출 후 바로 종료
             const fullRawText = parsedData.map(item => item.Caption || '').join(' ');
             if (!useAI) {
-                outputArea.value = fullRawText;
+                outputArea.innerHTML = escapeHtml(fullRawText).replace(/\n/g, '<br>');
+                rawOutput.value = fullRawText;
                 statusMsg.innerText = "✅ 텍스트 추출 완료! (AI 교정 생략됨)";
                 return;
             }
 
             // --- AI 단일 처리 ---
-            outputArea.value = "";
+            outputArea.innerHTML = "";
+            rawOutput.value = "";
             submitBtn.disabled = true;
             btnText.innerText = "처리 중...";
             loader.style.display = "block";
 
             let startTime = Date.now();
-
             statusMsg.innerText = "🤖 AI 음성인식 오류 분석 중...";
 
             try {
@@ -305,7 +395,9 @@
 
                 const resultData = await response.json();
                 if (resultData.result) {
-                    outputArea.value = resultData.result;
+                    const { plainText, html } = parseAndRender(resultData.result);
+                    outputArea.innerHTML = html;
+                    rawOutput.value = plainText;
                 } else {
                     throw new Error("결과값 없음");
                 }
@@ -329,14 +421,37 @@
                 btnText.innerText = "자막 추출 시작";
                 loader.style.display = "none";
                 statusMsg.innerText = `⚠️ 처리 실패 (${error.message})`;
-                outputArea.value = "--- [서버 오류로 인한 원본 텍스트입니다] ---\n\n" + fullRawText;
+                const errorText = "--- [서버 오류로 인한 원본 텍스트입니다] ---\n\n" + fullRawText;
+                outputArea.innerHTML = escapeHtml(errorText).replace(/\n/g, '<br>');
+                rawOutput.value = errorText;
                 console.error("교정 에러:", error);
             }
         }
 
-        // --- 다운로드 함수 (이전과 완벽히 동일) ---
+        // 교정 단어 툴팁
+        const correctionTooltip = document.getElementById('correctionTooltip');
+        document.addEventListener('mouseover', function(e) {
+            const target = e.target.closest('.corrected-word');
+            if (!target) return;
+            correctionTooltip.textContent = `교정된 단어입니다.\n원본: ${target.dataset.original} → 교정: ${target.dataset.corrected}`;
+            correctionTooltip.classList.add('visible');
+        });
+        document.addEventListener('mousemove', function(e) {
+            if (!correctionTooltip.classList.contains('visible')) return;
+            let x = e.clientX + 14;
+            let y = e.clientY - 60;
+            if (x + 270 > window.innerWidth) x = e.clientX - 284;
+            if (y < 8) y = e.clientY + 20;
+            correctionTooltip.style.left = x + 'px';
+            correctionTooltip.style.top = y + 'px';
+        });
+        document.addEventListener('mouseout', function(e) {
+            if (!e.target.closest('.corrected-word')) return;
+            correctionTooltip.classList.remove('visible');
+        });
+
         async function downloadTxt() {
-            const text = document.getElementById('textOutput').value;
+            const text = document.getElementById('textOutputRaw').value;
             if (!text.trim()) {
                 alert("저장할 텍스트가 없습니다.");
                 return;
