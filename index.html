@@ -283,91 +283,35 @@
                 return;
             }
 
-            // --- AI 스마트 분할 교정 시작 ---
-            outputArea.value = ""; 
+            // --- AI 단일 처리 ---
+            outputArea.value = "";
             submitBtn.disabled = true;
             btnText.innerText = "처리 중...";
             loader.style.display = "block";
-            
+
             let startTime = Date.now();
-            let finalCorrectedText = "";
-            let processedChunks = 0;
-            
-            // 💡 [핵심 최적화 로직] 글자 수를 기준으로 꽉꽉 눌러 담아서 최소한의 조각 만들기
-            const MAX_CHARS = 2000; // Vercel 60초 컷을 통과하는 넉넉한 1회 최대 글자 수
-            let chunks = [];
-            let currentChunk = "";
 
-            for (let i = 0; i < parsedData.length; i++) {
-                let caption = parsedData[i].Caption || '';
-                if (!caption) continue;
-                // 현재 문장을 더했을 때 최대 글자 수를 넘기면, 지금까지 모은 덩어리를 배열에 넣고 새 덩어리 시작
-                if (currentChunk.length + caption.length > MAX_CHARS && currentChunk.length > 0) {
-                    chunks.push(currentChunk);
-                    currentChunk = caption + " ";
-                } else {
-                    currentChunk += caption + " "; // 제한에 안 걸리면 계속 이어 붙이기
-                }
-            }
-            // 마지막 남은 덩어리 털어 넣기
-            if (currentChunk.trim().length > 0) {
-                chunks.push(currentChunk);
-            }
-
-            const totalChunks = chunks.length;
+            statusMsg.innerText = "🤖 AI 음성인식 오류 분석 중...";
 
             try {
-                // 상황 1: 데이터가 짧아서 1덩어리밖에 안 될 때 (초고속 단일 통신 모드)
-                if (totalChunks === 1) {
-                    statusMsg.innerText = "🤖 AI 문맥 분석 모델 가동 중... (단일 초고속 처리)";
-                    const response = await fetch('/api/correct', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: chunks[0] })
-                    });
+                const response = await fetch('/api/correct', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: fullRawText })
+                });
 
-                    if (response.status === 429) throw new Error("AI 사용량 초과");
-                    if (!response.ok) throw new Error(`서버 불안정 (${response.status})`);
+                if (response.status === 429) throw new Error("AI 사용량 초과");
+                if (!response.ok) throw new Error(`서버 불안정 (${response.status})`);
 
-                    const resultData = await response.json();
-                    if (resultData.result) {
-                        finalCorrectedText = resultData.result;
-                        outputArea.value = finalCorrectedText;
-                    } else {
-                        throw new Error("결과값 없음");
-                    }
-                } 
-                // 상황 2: 데이터가 길어서 스마트 분할 통신이 필요할 때
-                else {
-                    for (let i = 0; i < totalChunks; i++) {
-                        let percent = Math.round((i / totalChunks) * 100);
-                        statusMsg.innerText = `🤖 대용량 텍스트 압축 분할 처리 중... (${percent}% 완료) - 총 ${totalChunks}묶음 중 ${i+1}번째`;
-
-                        const response = await fetch('/api/correct', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ text: chunks[i] })
-                        });
-
-                        if (response.status === 429) throw new Error("AI 사용량 초과");
-                        if (!response.ok) throw new Error(`서버 불안정 (${response.status})`);
-
-                        const resultData = await response.json();
-                        
-                        if (resultData.result) {
-                            finalCorrectedText += resultData.result + " ";
-                            outputArea.value = finalCorrectedText; 
-                            outputArea.scrollTop = outputArea.scrollHeight; 
-                            processedChunks++;
-                        } else {
-                            throw new Error("결과값 없음");
-                        }
-                    }
+                const resultData = await response.json();
+                if (resultData.result) {
+                    outputArea.value = resultData.result;
+                } else {
+                    throw new Error("결과값 없음");
                 }
 
-                // 모든 처리가 에러 없이 끝났을 때
                 let timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
-                statusMsg.innerText = `✅ AI 교정 완료! (소요시간: ${timeTaken}초${totalChunks > 1 ? `, 압축 횟수: ${totalChunks}회` : ''})`;
+                statusMsg.innerText = `✅ AI 교정 완료! (소요시간: ${timeTaken}초)`;
                 submitBtn.disabled = false;
                 btnText.innerText = "자막 추출 시작";
                 loader.style.display = "none";
@@ -375,7 +319,7 @@
                 if ("Notification" in window && Notification.permission === "granted") {
                     const notification = new Notification("✨ 자막 교정 완료!", {
                         body: `소요시간: ${timeTaken}초\n클릭하여 결과를 확인하세요!`,
-                        icon: "https://cdn-icons-png.flaticon.com/512/2065/2065157.png" 
+                        icon: "https://cdn-icons-png.flaticon.com/512/2065/2065157.png"
                     });
                     notification.onclick = function() { window.focus(); };
                 }
@@ -384,19 +328,8 @@
                 submitBtn.disabled = false;
                 btnText.innerText = "자막 추출 시작";
                 loader.style.display = "none";
-                statusMsg.innerText = `⚠️ 처리 중단 (${error.message}) : 진행되지 못한 부분은 원본으로 대체합니다.`;
-                
-                // 에러 발생 시, 아직 AI가 처리하지 못한 남은 덩어리들을 모아서 원본 그대로 이어 붙여주는 방어 로직
-                let remainingText = "";
-                for (let j = processedChunks; j < totalChunks; j++) {
-                    remainingText += chunks[j] + " ";
-                }
-                
-                if (processedChunks === 0) {
-                    outputArea.value = "--- [서버 오류로 인한 원본 텍스트입니다] ---\n\n" + remainingText;
-                } else {
-                    outputArea.value = finalCorrectedText + "\n\n--- [아래부터는 서버 오류로 인한 원본 텍스트입니다] ---\n\n" + remainingText; 
-                }
+                statusMsg.innerText = `⚠️ 처리 실패 (${error.message})`;
+                outputArea.value = "--- [서버 오류로 인한 원본 텍스트입니다] ---\n\n" + fullRawText;
                 console.error("교정 에러:", error);
             }
         }
