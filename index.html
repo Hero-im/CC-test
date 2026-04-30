@@ -250,15 +250,15 @@
 
     <header>
         <div class="logo">
-            ⚡ <span>자막파일</span>추출기
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>자막</span>추출기
         </div>
-        <div style="font-size: 0.85rem; color: #6b7280; font-weight: 500;">AI Powered Workspace</div>
     </header>
 
     <main>
         <section class="panel">
             <div class="panel-header">
-                <div class="panel-title">📥 1. JSON 데이터 입력</div>
+                <div class="panel-title">JSON 입력</div>
             </div>
             <textarea id="jsonInput" placeholder='여기에 Network 탭에서 복사한 데이터를 붙여넣으세요.&#10;&#10;예시:&#10;[&#10;  { "Caption": "첫 번째 자막입니다..." },&#10;  { "Caption": "두 번째 자막입니다..." }&#10;]'></textarea>
             
@@ -278,9 +278,10 @@
 
         <section class="panel">
             <div class="panel-header">
-                <div class="panel-title">✨ 2. 최종 텍스트 결과</div>
+                <div class="panel-title">결과 텍스트</div>
                 <button class="btn btn-outline" onclick="downloadTxt()">
-                    💾 TXT 다운로드
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    다운로드
                 </button>
             </div>
             <div id="textOutput" class="text-output-display"><span class="placeholder-text">추출 및 교정된 텍스트가 이곳에 정리되어 나타납니다.</span></div>
@@ -290,7 +291,7 @@
             <div class="controls" style="justify-content: flex-start;">
                 <div class="status-wrapper">
                     <div id="loader" class="loader"></div>
-                    <span id="statusMsg">대기 중... 데이터 입력을 기다리고 있습니다.</span>
+                    <span id="statusMsg">데이터를 입력해 주세요.</span>
                 </div>
             </div>
         </section>
@@ -360,7 +361,7 @@
             try {
                 parsedData = JSON.parse(inputData);
             } catch (error) {
-                statusMsg.innerText = "❌ 입력된 데이터가 올바른 JSON 형식이 아닙니다.";
+                statusMsg.innerText = "입력된 데이터가 올바른 JSON 형식이 아닙니다.";
                 return;
             }
 
@@ -369,7 +370,7 @@
             if (!useAI) {
                 outputArea.innerHTML = escapeHtml(fullRawText).replace(/\n/g, '<br>');
                 rawOutput.value = fullRawText;
-                statusMsg.innerText = "✅ 텍스트 추출 완료! (AI 교정 생략됨)";
+                statusMsg.innerText = "텍스트 추출 완료 (교정 생략)";
                 return;
             }
 
@@ -381,7 +382,7 @@
             loader.style.display = "block";
 
             let startTime = Date.now();
-            statusMsg.innerText = "🤖 AI 음성인식 오류 분석 중...";
+            statusMsg.innerText = "분석 중...";
 
             try {
                 const response = await fetch('/api/correct', {
@@ -403,13 +404,13 @@
                 }
 
                 let timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
-                statusMsg.innerText = `✅ AI 교정 완료! (소요시간: ${timeTaken}초)`;
+                statusMsg.innerText = `완료 (${timeTaken}초)`;
                 submitBtn.disabled = false;
                 btnText.innerText = "자막 추출 시작";
                 loader.style.display = "none";
 
                 if ("Notification" in window && Notification.permission === "granted") {
-                    const notification = new Notification("✨ 자막 교정 완료!", {
+                    const notification = new Notification("자막 교정 완료", {
                         body: `소요시간: ${timeTaken}초\n클릭하여 결과를 확인하세요!`,
                         icon: "https://cdn-icons-png.flaticon.com/512/2065/2065157.png"
                     });
@@ -420,7 +421,7 @@
                 submitBtn.disabled = false;
                 btnText.innerText = "자막 추출 시작";
                 loader.style.display = "none";
-                statusMsg.innerText = `⚠️ 처리 실패 (${error.message})`;
+                statusMsg.innerText = `처리 실패 (${error.message})`;
                 const errorText = "--- [서버 오류로 인한 원본 텍스트입니다] ---\n\n" + fullRawText;
                 outputArea.innerHTML = escapeHtml(errorText).replace(/\n/g, '<br>');
                 rawOutput.value = errorText;
