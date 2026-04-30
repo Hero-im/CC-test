@@ -294,7 +294,7 @@
             let processedChunks = 0;
             
             // 💡 [핵심 최적화 로직] 글자 수를 기준으로 꽉꽉 눌러 담아서 최소한의 조각 만들기
-            const MAX_CHARS = 2500; // Vercel 60초 컷을 통과하는 넉넉한 1회 최대 글자 수
+            const MAX_CHARS = 2000; // Vercel 60초 컷을 통과하는 넉넉한 1회 최대 글자 수
             let chunks = [];
             let currentChunk = "";
 
