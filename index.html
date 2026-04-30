@@ -276,7 +276,7 @@
             }
 
             // AI 옵션이 꺼져있을 경우 전체 원본 텍스트 추출 후 바로 종료
-            const fullRawText = parsedData.map(item => item.Caption).join(' ');
+            const fullRawText = parsedData.map(item => item.Caption || '').join(' ');
             if (!useAI) {
                 outputArea.value = fullRawText;
                 statusMsg.innerText = "✅ 텍스트 추출 완료! (AI 교정 생략됨)";
@@ -299,7 +299,8 @@
             let currentChunk = "";
 
             for (let i = 0; i < parsedData.length; i++) {
-                let caption = parsedData[i].Caption;
+                let caption = parsedData[i].Caption || '';
+                if (!caption) continue;
                 // 현재 문장을 더했을 때 최대 글자 수를 넘기면, 지금까지 모은 덩어리를 배열에 넣고 새 덩어리 시작
                 if (currentChunk.length + caption.length > MAX_CHARS && currentChunk.length > 0) {
                     chunks.push(currentChunk);
