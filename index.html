@@ -294,7 +294,7 @@
             let processedChunks = 0;
             
             // 💡 한 번에 보낼 자막 묶음 개수 (40개 = 약 2~3분 분량씩 쪼개서 전송)
-            const CHUNK_SIZE = 40; 
+            const CHUNK_SIZE = 150;
             const totalChunks = Math.ceil(parsedData.length / CHUNK_SIZE);
 
             try {
