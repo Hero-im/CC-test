@@ -636,15 +636,19 @@
                 <ol class="setup-steps">
                     <li class="setup-step">
                         <span class="step-num">1</span>
-                        <span>원광대 인터넷강의 사이트(<strong>lxp.wku.ac.kr</strong>)에 로그인 후 강의를 열어주세요.</span>
+                        <span>원광대 인터넷강의(<strong>lxp.wku.ac.kr</strong>)에 로그인 후 강의를 열어주세요.</span>
                     </li>
                     <li class="setup-step">
                         <span class="step-num">2</span>
-                        <span>강의 영상이 재생 중인 상태에서 북마크 바의 <strong>📎 Panopto 자막 가져오기</strong>를 클릭하세요.</span>
+                        <span>강의 영상이 재생 중인 상태에서 북마크릿을 클릭하세요. <strong>Panopto 강의 페이지로 자동 이동</strong>합니다.</span>
                     </li>
                     <li class="setup-step">
                         <span class="step-num">3</span>
-                        <span>자막 데이터가 자동으로 이 페이지의 입력창에 채워집니다. 이후 <strong>자막 추출 시작</strong> 버튼을 눌러 주세요.</span>
+                        <span>이동된 Panopto 페이지에서 <strong>북마크릿을 한 번 더 클릭</strong>하세요. 자막이 자동으로 이 도구로 불러와집니다.</span>
+                    </li>
+                    <li class="setup-step">
+                        <span class="step-num">4</span>
+                        <span>자막 추출기로 돌아와 <strong>자막 추출 시작</strong> 버튼을 눌러 주세요.</span>
                     </li>
                 </ol>
                 <div class="notice-box">
@@ -689,31 +693,37 @@
 
         function openPanoptoModal() {
             const toolUrl = window.location.origin;
+            // 2단계: lxp→Panopto 이동(CORS 우회) → panopto.com에서 동일출처 fetch
             const bmCode = 'javascript:(function(){' +
+                'var host=location.hostname;' +
                 'var id=null;' +
-                'var p=new URLSearchParams(location.search);' +
-                'id=p.get(\'id\');' +
-                'if(!id){' +
-                    'var f=document.querySelectorAll(\'iframe\');' +
-                    'for(var i=0;i<f.length;i++){' +
-                        'var s=f[i].src||\'\';' +
-                        'if(s.indexOf(\'panopto.com\')>=0){' +
-                            'var m=s.match(/[?&]id=([^&]+)/);' +
-                            'if(m){id=m[1];break;}' +
-                        '}' +
+                'if(host.indexOf(\'panopto.com\')>=0){' +
+                    'var p=new URLSearchParams(location.search);' +
+                    'id=p.get(\'id\');' +
+                    'if(!id){alert(\'강의 ID를 찾을 수 없습니다.\');return;}' +
+                    'var u=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/DeliveryInfo.aspx?deliveryId=\'+id+\'&invocationId=&isPortableDevice=false&refreshAuthCookie=true&isInsideVle=false&responseType=json\';' +
+                    'fetch(u,{credentials:\'include\'})' +
+                    '.then(function(r){return r.json();})' +
+                    '.then(function(data){' +
+                        'var c=data.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});' +
+                        'if(!c.length){alert(\'자막 데이터를 찾을 수 없습니다.\');return;}' +
+                        'var e=btoa(unescape(encodeURIComponent(JSON.stringify(c))));' +
+                        'window.open(\'' + toolUrl + '/#data=\'+e,\'_blank\');' +
+                    '})' +
+                    '.catch(function(err){alert(\'오류: \'+err.message);});' +
+                    'return;' +
+                '}' +
+                'var f=document.querySelectorAll(\'iframe\');' +
+                'for(var i=0;i<f.length;i++){' +
+                    'var s=f[i].src||\'\';' +
+                    'if(s.indexOf(\'panopto.com\')>=0){' +
+                        'var m=s.match(/[?&]id=([^&]+)/);' +
+                        'if(m){id=m[1];break;}' +
                     '}' +
                 '}' +
                 'if(!id){alert(\'강의 ID를 찾을 수 없습니다. 강의 영상이 재생 중인 페이지에서 실행해 주세요.\');return;}' +
-                'var u=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/DeliveryInfo.aspx?deliveryId=\'+id+\'&invocationId=&isPortableDevice=false&refreshAuthCookie=true&isInsideVle=false&responseType=json\';' +
-                'fetch(u,{credentials:\'include\'})' +
-                '.then(function(r){return r.json();})' +
-                '.then(function(data){' +
-                    'var c=data.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});' +
-                    'if(!c.length){alert(\'자막 데이터를 찾을 수 없습니다.\');return;}' +
-                    'var e=btoa(unescape(encodeURIComponent(JSON.stringify(c))));' +
-                    'window.open(\'' + toolUrl + '/#data=\'+e,\'_blank\');' +
-                '})' +
-                '.catch(function(err){alert(\'오류가 발생했습니다: \'+err.message);});' +
+                'alert(\'Panopto 강의 페이지로 이동합니다.\\n이동 완료 후 북마크릿을 한 번 더 클릭해 주세요!\');' +
+                'location.href=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/Viewer.aspx?id=\'+id;' +
             '})();';
             document.getElementById('bookmarkletLink').href = bmCode;
             document.getElementById('panoptoModal').style.display = 'flex';
