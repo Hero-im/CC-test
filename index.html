@@ -724,18 +724,31 @@
                             'sendCaps(caps);' +
                         '}' +
                         'if(!arr){' +
-                            // .vtt 파일만 찾기 (Captions.ashx 등 404 URL 제외)
+                            // 1) .vtt 파일 직접 탐색
                             'var perfRes=performance.getEntriesByType(\'resource\');' +
                             'var capUrl=null;' +
-                            'for(var pi=0;pi<perfRes.length;pi++){' +
-                                'var pn=perfRes[pi].name.toLowerCase();' +
-                                'if(pn.indexOf(\'.vtt\')>-1||pn.indexOf(\'.webvtt\')>-1){capUrl=perfRes[pi].name;break;}' +
-                            '}' +
+                            'for(var pi=0;pi<perfRes.length;pi++){var pn=perfRes[pi].name.toLowerCase();if(pn.indexOf(\'.vtt\')>-1||pn.indexOf(\'.webvtt\')>-1){capUrl=perfRes[pi].name;break;}}' +
                             'if(capUrl){fetch(capUrl,{credentials:\'include\'}).then(function(r){return r.text();}).then(parseAndSend).catch(function(e){alert(\'VTT 로드 실패: \'+e.message);});return;}' +
-                            // Streams[0] 구조 클립보드 복사
-                            'var st=data.Delivery&&data.Delivery.Streams;' +
-                            'var dbg=st&&st[0]?JSON.stringify(st[0]):\'Streams 없음\';' +
-                            'navigator.clipboard.writeText(dbg).then(function(){alert(\'Streams[0] 구조를 클립보드에 복사했습니다!\\n개발자에게 보내주세요.\');}).catch(function(){alert(dbg.slice(0,400));});' +
+                            // 2) SessionId로 Captions.ashx 재시도 (deliveryId 대신)
+                            'var sessId=data.SessionId;' +
+                            'var avCaps=data.Delivery&&data.Delivery.AvailableCaptions;' +
+                            'var lang2=avCaps&&avCaps[0]?avCaps[0].Language:10;' +
+                            'if(sessId){' +
+                                'var cu2=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/Captions.ashx?deliveryId=\'+sessId+\'&language=\'+lang2;' +
+                                'fetch(cu2,{credentials:\'include\'}).then(function(r){return r.text();}).then(function(txt2){' +
+                                    'if(txt2.indexOf(\'<!DOCTYPE\')>-1||txt2.indexOf(\'<html\')>-1){' +
+                                        // 3) CDN 비-영상 리소스 목록 클립보드 복사
+                                        'var sus=[];' +
+                                        'for(var xi=0;xi<perfRes.length;xi++){var xn=perfRes[xi].name.toLowerCase();if((xn.indexOf(\'panopto.com\')>-1||xn.indexOf(\'cloudfront\')>-1)&&xn.indexOf(\'.mp4\')<0&&xn.indexOf(\'fragmented\')<0&&xn.indexOf(\'.css\')<0&&xn.indexOf(\'.js\')<0&&xn.indexOf(\'master.m3u8\')<0&&xn.indexOf(\'index.m3u8\')<0){sus.push(perfRes[xi].name);}}' +
+                                        'var dbg2=\'[CDN 리소스]\\n\'+sus.join(\'\\n\')+\'\\n\\n[SessionId]\\n\'+sessId;' +
+                                        'navigator.clipboard.writeText(dbg2).then(function(){alert(\'CDN 리소스 목록을 클립보드에 복사했습니다!\\n개발자에게 보내주세요.\');}).catch(function(){alert(dbg2.slice(0,400));});' +
+                                        'return;' +
+                                    '}' +
+                                    'parseAndSend(txt2);' +
+                                '}).catch(function(){alert(\'자막을 불러오지 못했습니다.\');});' +
+                                'return;' +
+                            '}' +
+                            'alert(\'이 강의에는 자막 데이터가 없습니다.\');' +
                             'return;' +
                         '}' +
                         'var c=arr.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});' +
