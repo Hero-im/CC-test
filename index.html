@@ -705,7 +705,7 @@
                     'fetch(u,{credentials:\'include\'})' +
                     '.then(function(r){return r.json();})' +
                     '.then(function(data){' +
-                        'function fa(o,d){if(d>6||!o||typeof o!==\'object\')return null;if(Array.isArray(o)&&o.length>0&&o[0]&&o[0].Caption!==undefined)return o;if(!Array.isArray(o)){var ks=Object.keys(o);for(var i=0;i<ks.length;i++){var r=fa(o[ks[i]],d+1);if(r)return r;}}return null;}' +
+                        'function fa(o,d){if(d>6||!o||typeof o!==\'object\')return null;if(Array.isArray(o)&&o.length>0&&o[0]&&(o[0].Caption!==undefined||o[0].Text!==undefined))return o;if(!Array.isArray(o)){var ks=Object.keys(o);for(var i=0;i<ks.length;i++){var r=fa(o[ks[i]],d+1);if(r)return r;}}return null;}' +
                         'var arr=fa(data,0);' +
                         'function sendCaps(caps){var e=btoa(unescape(encodeURIComponent(JSON.stringify(caps))));window.open(\'' + toolUrl + '/#data=\'+e,\'_blank\');}' +
                         'function parseAndSend(txt){' +
@@ -724,34 +724,43 @@
                             'sendCaps(caps);' +
                         '}' +
                         'if(!arr){' +
+                            // 0) video textTracks 확인 (자막이 화면에 표시 중인 경우)
+                            'var videos=document.querySelectorAll(\'video\');' +
+                            'var tcaps=[];' +
+                            'for(var vi=0;vi<videos.length;vi++){var tts=videos[vi].textTracks;for(var ti=0;ti<tts.length;ti++){var trk=tts[ti];if(trk.cues&&trk.cues.length>0){for(var ci=0;ci<trk.cues.length;ci++){var ct=(trk.cues[ci].text||\'\').replace(/<[^>]+>/g,\'\').trim();if(ct)tcaps.push({Caption:ct});}}}}' +
+                            'if(tcaps.length>0){sendCaps(tcaps);return;}' +
                             // 1) .vtt 파일 직접 탐색
                             'var perfRes=performance.getEntriesByType(\'resource\');' +
                             'var capUrl=null;' +
                             'for(var pi=0;pi<perfRes.length;pi++){var pn=perfRes[pi].name.toLowerCase();if(pn.indexOf(\'.vtt\')>-1||pn.indexOf(\'.webvtt\')>-1){capUrl=perfRes[pi].name;break;}}' +
                             'if(capUrl){fetch(capUrl,{credentials:\'include\'}).then(function(r){return r.text();}).then(parseAndSend).catch(function(e){alert(\'VTT 로드 실패: \'+e.message);});return;}' +
-                            // 2) SessionId로 Captions.ashx 재시도 (deliveryId 대신)
+                            // 2) SessionId 기반 엔드포인트 시도
                             'var sessId=data.SessionId;' +
                             'var avCaps=data.Delivery&&data.Delivery.AvailableCaptions;' +
                             'var lang2=avCaps&&avCaps[0]?avCaps[0].Language:10;' +
                             'if(sessId){' +
-                                'var cu2=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/Captions.ashx?deliveryId=\'+sessId+\'&language=\'+lang2;' +
-                                'fetch(cu2,{credentials:\'include\'}).then(function(r){return r.text();}).then(function(txt2){' +
-                                    'if(txt2.indexOf(\'<!DOCTYPE\')>-1||txt2.indexOf(\'<html\')>-1){' +
-                                        // 3) CDN 비-영상 리소스 목록 클립보드 복사
-                                        'var sus=[];' +
-                                        'for(var xi=0;xi<perfRes.length;xi++){var xn=perfRes[xi].name.toLowerCase();if((xn.indexOf(\'panopto.com\')>-1||xn.indexOf(\'cloudfront\')>-1)&&xn.indexOf(\'.mp4\')<0&&xn.indexOf(\'fragmented\')<0&&xn.indexOf(\'.css\')<0&&xn.indexOf(\'.js\')<0&&xn.indexOf(\'master.m3u8\')<0&&xn.indexOf(\'index.m3u8\')<0){sus.push(perfRes[xi].name);}}' +
-                                        'var dbg2=\'[CDN 리소스]\\n\'+sus.join(\'\\n\')+\'\\n\\n[SessionId]\\n\'+sessId;' +
-                                        'navigator.clipboard.writeText(dbg2).then(function(){alert(\'CDN 리소스 목록을 클립보드에 복사했습니다!\\n개발자에게 보내주세요.\');}).catch(function(){alert(dbg2.slice(0,400));});' +
-                                        'return;' +
-                                    '}' +
-                                    'parseAndSend(txt2);' +
-                                '}).catch(function(){alert(\'자막을 불러오지 못했습니다.\');});' +
+                                // 2a) /Panopto/Api/Sessions/<sessId>/captions (capital A, no version)
+                                'var cu3=\'https://wonkwang.ap.panopto.com/Panopto/Api/Sessions/\'+sessId+\'/captions\';' +
+                                'fetch(cu3,{credentials:\'include\'}).then(function(r3){if(!r3.ok)throw new Error(r3.status);return r3.text();})' +
+                                '.then(function(txt3){parseAndSend(txt3);})' +
+                                '.catch(function(){' +
+                                    // 2b) Captions.ashx fallback
+                                    'var cu2=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/Captions.ashx?deliveryId=\'+sessId+\'&language=\'+lang2;' +
+                                    'fetch(cu2,{credentials:\'include\'}).then(function(r){return r.text();}).then(function(txt2){' +
+                                        'if(txt2.indexOf(\'<!DOCTYPE\')>-1||txt2.indexOf(\'<html\')>-1){' +
+                                            'var dbg2=\'[DeliveryInfo JSON]\\n\'+JSON.stringify(data).slice(0,9000)+\'\\n\\n[SessionId]\\n\'+sessId;' +
+                                            'navigator.clipboard.writeText(dbg2).then(function(){alert(\'DeliveryInfo 응답 데이터를 클립보드에 복사했습니다!\\n여기에 붙여넣기 해 주세요.\');}).catch(function(){alert(\'클립보드 복사 실패\');});' +
+                                            'return;' +
+                                        '}' +
+                                        'parseAndSend(txt2);' +
+                                    '}).catch(function(){alert(\'자막을 불러오지 못했습니다.\');});' +
+                                '});' +
                                 'return;' +
                             '}' +
                             'alert(\'이 강의에는 자막 데이터가 없습니다.\');' +
                             'return;' +
                         '}' +
-                        'var c=arr.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});' +
+                        'var c=arr.filter(function(x){return x&&(x.Caption||x.Text);}).map(function(x){return{Caption:x.Caption||x.Text};});' +
                         'if(!c.length){alert(\'자막 데이터를 찾을 수 없습니다.\');return;}' +
                         'sendCaps(c);' +
                     '})' +
