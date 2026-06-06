@@ -727,8 +727,16 @@
                             'var avCaps=data.Delivery&&data.Delivery.AvailableCaptions;' +
                             'if(!avCaps||!avCaps.length){alert(\'이 강의에는 자막 데이터가 없습니다.\');return;}' +
                             'var lang=avCaps[0].Language;' +
-                            'var cu=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/Captions.ashx?deliveryId=\'+id+\'&language=\'+lang;' +
-                            'fetch(cu,{credentials:\'include\'}).then(function(r){return r.text();}).then(parseAndSend).catch(function(err){alert(\'자막 파일 로드 실패: \'+err.message);});' +
+                            'var cu=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/Caption.ashx?ID=\'+id+\'&language=\'+lang;' +
+                            'fetch(cu,{credentials:\'include\'}).then(function(r){return r.text();}).then(function(txt){' +
+                                'if(txt.indexOf(\'<!DOCTYPE\')>-1||txt.indexOf(\'<html\')>-1){' +
+                                    'var st=data.Delivery&&data.Delivery.Streams;' +
+                                    'var dbg=st&&st[0]?JSON.stringify(st[0]).slice(0,800):\'Streams 없음\';' +
+                                    'navigator.clipboard.writeText(dbg).then(function(){alert(\'Caption.ashx도 404.\\nStreams[0] 정보를 클립보드에 복사했습니다. 개발자에게 보내주세요!\');}).catch(function(){alert(dbg);});' +
+                                    'return;' +
+                                '}' +
+                                'parseAndSend(txt);' +
+                            '}).catch(function(err){alert(\'자막 파일 로드 실패: \'+err.message);});' +
                             'return;' +
                         '}' +
                         'var c=arr.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});' +
