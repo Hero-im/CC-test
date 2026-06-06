@@ -705,17 +705,13 @@
                     'fetch(u,{credentials:\'include\'})' +
                     '.then(function(r){return r.json();})' +
                     '.then(function(data){' +
-                        'var arr=null;' +
-                        'if(Array.isArray(data)){arr=data;}' +
-                        'else{' +
-                            'var src=data.Delivery||data;' +
-                            'var ks=Object.keys(src);' +
-                            'for(var k=0;k<ks.length;k++){' +
-                                'var v=src[ks[k]];' +
-                                'if(Array.isArray(v)&&v.length>0&&v[0]&&v[0].Caption!==undefined){arr=v;break;}' +
-                            '}' +
+                        'function fa(o,d){if(d>6||!o||typeof o!==\'object\')return null;if(Array.isArray(o)&&o.length>0&&o[0]&&o[0].Caption!==undefined)return o;if(!Array.isArray(o)){var ks=Object.keys(o);for(var i=0;i<ks.length;i++){var r=fa(o[ks[i]],d+1);if(r)return r;}}return null;}' +
+                        'var arr=fa(data,0);' +
+                        'if(!arr){' +
+                            'var dbg=\'[Panopto 구조]\\ntopKeys: \'+Object.keys(data).join(\', \')+\'\\nDelivery keys: \'+Object.keys(data.Delivery||{}).join(\', \');' +
+                            'navigator.clipboard.writeText(dbg).then(function(){alert(\'자막을 찾지 못했습니다.\\n구조 정보를 클립보드에 복사했습니다!\\n카카오톡이나 메모장에 붙여넣기 후 개발자에게 보내주세요.\');}).catch(function(){alert(\'자막을 찾지 못했습니다.\\n\'+dbg);});' +
+                            'return;' +
                         '}' +
-                        'if(!arr){console.log(\'[Panopto] 전체 응답:\',JSON.stringify(data,null,2));alert(\'자막 필드를 찾지 못했습니다.\\nF12 → 콘솔 탭에서 [Panopto] 전체 응답을 확인하세요.\');return;}' +
                         'var c=arr.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});' +
                         'if(!c.length){alert(\'자막 데이터를 찾을 수 없습니다.\');return;}' +
                         'var e=btoa(unescape(encodeURIComponent(JSON.stringify(c))));' +
