@@ -8,28 +8,31 @@
         /* 웹폰트 적용 (Pretendard) */
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
-        /* 전체 리셋 및 기본 배경 */
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            font-family: 'Pretendard', sans-serif; 
-            background-color: #f3f4f6; /* 아주 연한 회색 배경 */
-            color: #1f2937; 
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background: linear-gradient(160deg, #eef2ff 0%, #f5f3ff 40%, #eff6ff 100%);
+            color: #1f2937;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
-        /* 상단 네비게이션 바 (공식 사이트 느낌) */
         header {
-            background-color: #ffffff;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #1e40af 100%);
             padding: 1rem 2rem;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 24px rgba(30, 27, 75, 0.35);
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
-        .logo { font-size: 1.25rem; font-weight: 800; color: #111827; display: flex; align-items: center; gap: 8px; }
-        .logo span { color: #3b82f6; } /* 포인트 컬러 */
+        .logo { font-size: 1.25rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 8px; }
+        .logo span {
+            background: linear-gradient(135deg, #a5b4fc, #93c5fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
         /* 메인 워크스페이스 레이아웃 (좌우 분할) */
         main {
@@ -43,21 +46,29 @@
             width: 100%;
         }
 
-        /* 각 패널 (입력창 / 결과창) */
         .panel {
             background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.1), 0 2px 8px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            border: 1px solid #e5e7eb;
+            border: 1px solid rgba(99, 102, 241, 0.12);
+            position: relative;
+        }
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #3b82f6, #06b6d4);
+            z-index: 1;
         }
 
         .panel-header {
             padding: 1rem 1.5rem;
-            background-color: #f9fafb;
-            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #fafbff, #f5f3ff);
+            border-bottom: 1px solid rgba(99, 102, 241, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -81,10 +92,9 @@
         textarea:focus { outline: none; }
         textarea::placeholder { color: #9ca3af; }
 
-        /* 커스텀 스크롤바 */
-        textarea::-webkit-scrollbar { width: 8px; }
+        textarea::-webkit-scrollbar { width: 6px; }
         textarea::-webkit-scrollbar-track { background: transparent; }
-        textarea::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
+        textarea::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #a5b4fc, #93c5fd); border-radius: 10px; }
 
         /* 결과 출력 영역 (HTML 렌더링용 div) */
         .text-output-display {
@@ -101,9 +111,9 @@
             overflow-y: auto;
             word-break: break-word;
         }
-        .text-output-display::-webkit-scrollbar { width: 8px; }
+        .text-output-display::-webkit-scrollbar { width: 6px; }
         .text-output-display::-webkit-scrollbar-track { background: transparent; }
-        .text-output-display::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
+        .text-output-display::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #a5b4fc, #93c5fd); border-radius: 10px; }
         .placeholder-text { color: #9ca3af; }
 
         /* 교정된 단어 강조 */
@@ -138,10 +148,9 @@
             border-radius: 2px;
         }
 
-        /* 교정 툴팁 */
         .correction-tooltip {
             position: fixed;
-            background: #1f2937;
+            background: linear-gradient(135deg, #1e1b4b, #1e40af);
             color: #f9fafb;
             padding: 8px 12px;
             border-radius: 8px;
@@ -153,15 +162,14 @@
             z-index: 1000;
             max-width: 260px;
             white-space: pre;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 20px rgba(30,27,75,0.25);
         }
         .correction-tooltip.visible { opacity: 1; }
 
-        /* 하단 컨트롤 바 */
         .controls {
             padding: 1rem 1.5rem;
-            background-color: #ffffff;
-            border-top: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #fafbff, #f5f3ff);
+            border-top: 1px solid rgba(99, 102, 241, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -174,10 +182,9 @@
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 34px; }
         .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        input:checked + .slider { background-color: #3b82f6; }
+        input:checked + .slider { background: linear-gradient(135deg, #6366f1, #3b82f6); }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        /* 세련된 버튼 스타일 */
         .btn {
             padding: 0.6rem 1.5rem;
             border-radius: 8px;
@@ -189,44 +196,56 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            color: white;
         }
-        .btn-primary { background-color: #3b82f6; color: white; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3); }
-        .btn-primary:hover { background-color: #2563eb; transform: translateY(-1px); }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #3b82f6);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(99, 102, 241, 0.45); }
         .btn-primary:active { transform: translateY(0); }
-        .btn-primary:disabled { background-color: #9ca3af; cursor: not-allowed; box-shadow: none; transform: none; }
+        .btn-primary:disabled { background: linear-gradient(135deg, #9ca3af, #d1d5db); cursor: not-allowed; box-shadow: none; transform: none; }
 
-        .btn-outline { background-color: transparent; color: #10b981; border: 1px solid #10b981; }
-        .btn-outline:hover { background-color: #f0fdf4; }
+        .btn-outline {
+            background: linear-gradient(135deg, #10b981, #06b6d4);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .btn-outline:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4); }
 
-        .btn-edit { background-color: transparent; color: #6366f1; border: 1px solid #6366f1; }
-        .btn-edit:hover { background-color: #eef2ff; }
-        .btn-edit.active { background-color: #6366f1; color: white; }
-        .btn-edit.active:hover { background-color: #4f46e5; }
+        .btn-edit {
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+        .btn-edit:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(139, 92, 246, 0.4); }
+        .btn-edit.active { background: linear-gradient(135deg, #4f46e5, #7c3aed); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4); }
 
-        .btn-summarize { background-color: transparent; color: #8b5cf6; border: 1px solid #8b5cf6; }
-        .btn-summarize:hover { background-color: #f5f3ff; }
-        .btn-summarize:disabled { color: #9ca3af; border-color: #d1d5db; cursor: not-allowed; }
+        .btn-summarize {
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+        }
+        .btn-summarize:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(236, 72, 153, 0.4); }
+        .btn-summarize:disabled { background: linear-gradient(135deg, #9ca3af, #d1d5db); cursor: not-allowed; box-shadow: none; transform: none; }
 
-        /* 버전 뱃지 */
         .version-tag {
             position: relative;
             display: inline-flex;
             align-items: center;
             font-size: 0.72rem;
             font-weight: 600;
-            color: #6366f1;
-            background: #eef2ff;
+            color: white;
+            background: rgba(255,255,255,0.18);
             padding: 2px 9px;
             border-radius: 999px;
             cursor: default;
-            border: 1px solid #c7d2fe;
+            border: 1px solid rgba(255,255,255,0.3);
             user-select: none;
+            backdrop-filter: blur(4px);
         }
         .version-tag .version-tooltip {
             position: absolute;
             top: calc(100% + 10px);
             left: 0;
-            background: #1f2937;
+            background: linear-gradient(135deg, #1e1b4b, #1e40af);
             color: #f9fafb;
             padding: 14px 16px;
             border-radius: 10px;
@@ -239,7 +258,7 @@
             transform: translateY(-6px);
             z-index: 500;
             pointer-events: none;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+            box-shadow: 0 8px 32px rgba(30,27,75,0.3);
             white-space: normal;
             word-break: keep-all;
         }
@@ -260,16 +279,16 @@
             gap: 6px;
             font-size: 0.78rem;
             line-height: 1.6;
-            color: #a5b4fc;
+            color: #93c5fd;
             margin-bottom: 2px;
         }
         .version-tooltip .v-name { color: #ffffff !important; font-weight: 700; }
 
-        /* 요약 모달 */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.45);
+            background: rgba(30, 27, 75, 0.5);
+            backdrop-filter: blur(4px);
             z-index: 2000;
             display: flex;
             align-items: center;
@@ -278,22 +297,23 @@
         }
         .modal-box {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            border-radius: 20px;
+            box-shadow: 0 24px 64px rgba(30,27,75,0.25);
             width: 100%;
             max-width: 680px;
             max-height: 80vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            border: 1px solid rgba(99,102,241,0.15);
         }
         .modal-header {
             padding: 1.1rem 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid rgba(99,102,241,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #f9fafb;
+            background: linear-gradient(135deg, #fafbff, #f5f3ff);
         }
         .modal-header h3 { font-size: 1rem; font-weight: 700; color: #111827; }
         .modal-close {
@@ -319,22 +339,22 @@
         }
         .modal-footer {
             padding: 1rem 1.5rem;
-            border-top: 1px solid #e5e7eb;
+            border-top: 1px solid rgba(99,102,241,0.1);
             display: flex;
             justify-content: flex-end;
             gap: 8px;
-            background: #f9fafb;
+            background: linear-gradient(135deg, #fafbff, #f5f3ff);
         }
 
         .text-output-display[contenteditable="true"] {
             outline: 2px solid #6366f1;
-            background: #fafafa;
+            background: #fafafe;
         }
 
         /* 로딩 및 상태 메시지 */
         .status-wrapper { display: flex; align-items: center; gap: 10px; }
         #statusMsg { font-size: 0.85rem; color: #6b7280; font-weight: 500; }
-        .loader { display: none; width: 18px; height: 18px; border: 2px solid #f3f3f3; border-top: 2px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+        .loader { display: none; width: 18px; height: 18px; border: 2px solid #eef2ff; border-top: 2px solid #6366f1; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* ===== 반응형 모바일 최적화 ===== */
@@ -387,7 +407,7 @@
             /* 모달: 하단 sheet 스타일 */
             .modal-overlay { align-items: flex-end; padding: 0; }
             .modal-box {
-                border-radius: 16px 16px 0 0;
+                border-radius: 20px 20px 0 0;
                 max-height: 88vh;
             }
             .modal-footer { flex-wrap: wrap; gap: 8px; }
@@ -415,9 +435,12 @@
             .correction-tooltip { display: none; }
         }
 
-        /* Panopto 연동 버튼 */
-        .btn-panopto { background-color: transparent; color: #0ea5e9; border: 1px solid #0ea5e9; }
-        .btn-panopto:hover { background-color: #f0f9ff; }
+        .btn-panopto {
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        .btn-panopto:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(59, 130, 246, 0.4); }
 
         /* 북마크릿 드래그 링크 */
         .bookmarklet-link {
@@ -441,8 +464,8 @@
         .bookmarklet-link:active { cursor: grabbing; transform: scale(0.98); }
 
         .bookmarklet-section {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background: linear-gradient(135deg, #fafbff, #f5f3ff);
+            border: 1px solid rgba(99,102,241,0.15);
             border-radius: 12px;
             padding: 20px;
             text-align: center;
@@ -466,7 +489,7 @@
             flex-shrink: 0;
             width: 24px;
             height: 24px;
-            background: #3b82f6;
+            background: linear-gradient(135deg, #6366f1, #3b82f6);
             color: white;
             border-radius: 50%;
             display: flex;
@@ -477,7 +500,7 @@
             margin-top: 2px;
         }
         .notice-box {
-            background: #fef3c7;
+            background: linear-gradient(135deg, #fefce8, #fef3c7);
             border: 1px solid #fcd34d;
             border-radius: 8px;
             padding: 10px 14px;
@@ -492,14 +515,13 @@
             position: relative;
         }
         
-        /* 말풍선 몸통 */
         .tooltip-wrapper::after {
             content: attr(data-tooltip);
             position: absolute;
             bottom: 100%;
-            left: -10px; /* 말풍선이 잘리지 않도록 버튼보다 살짝만 왼쪽에서 시작 */
-            transform: translateY(0px); /* 기존에 있던 translateX(-50%) 제거 */
-            background-color: #1f2937; 
+            left: -10px;
+            transform: translateY(0px);
+            background: linear-gradient(135deg, #1e1b4b, #1e40af);
             color: #f9fafb;
             padding: 10px 14px;
             border-radius: 8px;
@@ -526,7 +548,7 @@
             transform: translateY(10px); /* 기존에 있던 translateX(-50%) 제거 */
             border-width: 6px;
             border-style: solid;
-            border-color: #1f2937 transparent transparent transparent;
+            border-color: #1e40af transparent transparent transparent;
             opacity: 0;
             visibility: hidden;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -564,7 +586,7 @@
                 </div>
             </div>
         </div>
-        <div class="header-subtitle" style="font-size: 0.85rem; color: #6b7280; font-weight: 500;">AI Powered Workspace</div>
+        <div class="header-subtitle" style="font-size: 0.85rem; color: rgba(255,255,255,0.65); font-weight: 500;">AI Powered Workspace</div>
     </header>
 
     <main>
