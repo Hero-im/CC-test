@@ -676,7 +676,15 @@
     </div>
 
 <script>
-        // Panopto URL hash receiver: auto-populate JSON input when redirected from bookmarklet
+        // 같은 origin의 탭들끼리 채널 공유 — 새 탭이 열리면 기존 탭은 닫힘
+        var _bc = null;
+        try { _bc = new BroadcastChannel('wku_subtitle_tool'); } catch(e) {}
+        if (_bc) {
+            _bc.onmessage = function(ev) {
+                if (ev.data === 'close_old_tabs') window.close();
+            };
+        }
+
         function loadFromHash() {
             var hash = window.location.hash;
             if (!hash.startsWith('#data=')) return;
@@ -686,6 +694,7 @@
                 document.getElementById('jsonInput').value = JSON.stringify(data, null, 2);
                 document.getElementById('statusMsg').textContent = 'Panopto 자막 ' + data.length + '개 자동 로드 완료! 아래 버튼을 눌러 추출을 시작하세요.';
                 history.replaceState(null, '', window.location.pathname);
+                if (_bc) _bc.postMessage('close_old_tabs');
             } catch(e) {
                 console.error('Panopto 데이터 로드 실패:', e);
             }
