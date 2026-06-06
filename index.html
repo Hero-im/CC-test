@@ -835,7 +835,7 @@
                 'if(!id){alert(\'강의 ID를 찾을 수 없습니다. 강의 영상이 재생 중인 페이지에서 실행해 주세요.\');return;}' +
                 'var panoptoUrl=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer.aspx?id=\'+id;' +
                 'window.open(panoptoUrl,\'_blank\');' +
-                'if(localStorage.getItem(\'wku_bm_no_popup\')!==\'1\'){' +
+                'var _pt=localStorage.getItem(\'wku_bm_no_popup\');if(!_pt||Date.now()-parseInt(_pt)>86400000){' +
                     'var pw=window.open(\'about:blank\',\'_blank\',\'width=400,height=175,top=20,left=\'+(screen.width-420));' +
                     'if(pw){' +
                         'var pb=pw.document.body;' +
@@ -850,11 +850,11 @@
                         'var pChk=pw.document.createElement(\'input\');' +
                         'pChk.type=\'checkbox\';' +
                         'pLbl.appendChild(pChk);' +
-                        'pLbl.appendChild(pw.document.createTextNode(\'다시 표시하지 않음\'));' +
+                        'pLbl.appendChild(pw.document.createTextNode(\'하루동안 표시하지 않음\'));' +
                         'var pcBtn=pw.document.createElement(\'button\');' +
                         'pcBtn.textContent=\'닫기\';' +
                         'pcBtn.style.cssText=\'background:rgba(255,255,255,0.25);border:none;color:#fff;padding:4px 16px;cursor:pointer;border-radius:4px;font-size:13px\';' +
-                        'pcBtn.onclick=function(){if(pChk.checked)pw.opener.localStorage.setItem(\'wku_bm_no_popup\',\'1\');pw.close();};' +
+                        'pcBtn.onclick=function(){if(pChk.checked)pw.opener.localStorage.setItem(\'wku_bm_no_popup\',String(Date.now()));pw.close();};' +
                         'pRow.appendChild(pLbl);pRow.appendChild(pcBtn);' +
                         'pb.appendChild(pt);pb.appendChild(pRow);' +
                     '}' +
