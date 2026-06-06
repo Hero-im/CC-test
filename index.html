@@ -701,6 +701,12 @@
                     'var p=new URLSearchParams(location.search);' +
                     'id=p.get(\'id\');' +
                     'if(!id){alert(\'강의 ID를 찾을 수 없습니다.\');return;}' +
+                    // 0단계: 뷰어가 이미 로드한 메모리 데이터 탐색 (POST보다 우선)
+                    'var wTs=null;' +
+                    'var wDi=window.Data||window.deliveryInfo||window.pageData||window.serverData;' +
+                    'if(wDi&&wDi.Delivery&&wDi.Delivery.Timestamps&&wDi.Delivery.Timestamps.length>0){wTs=wDi.Delivery.Timestamps.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});}' +
+                    'if(!wTs||!wTs.length){var wks2=Object.keys(window);for(var wki=0;wki<wks2.length&&(!wTs||!wTs.length);wki++){try{var wv2=window[wks2[wki]];if(wv2&&typeof wv2===\'object\'&&!Array.isArray(wv2)&&wv2.Delivery&&wv2.Delivery.Timestamps&&wv2.Delivery.Timestamps.length>0){wTs=wv2.Delivery.Timestamps.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});}}catch(e){}}}' +
+                    'if(wTs&&wTs.length>0){var e0=btoa(unescape(encodeURIComponent(JSON.stringify(wTs))));window.open(\'' + toolUrl + '/#data=\'+e0,\'_blank\');return;}' +
                     'var u=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/DeliveryInfo.aspx\';' +
                     'var bdy=\'deliveryId=\'+encodeURIComponent(id)+\'&invocationId=&isPortableDevice=false&refreshAuthCookie=true&isInsideVle=false&responseType=json\';' +
                     'fetch(u,{method:\'POST\',credentials:\'include\',headers:{\'Content-Type\':\'application/x-www-form-urlencoded\'},body:bdy})' +
