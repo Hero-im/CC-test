@@ -707,19 +707,33 @@
                     '.then(function(data){' +
                         'function fa(o,d){if(d>6||!o||typeof o!==\'object\')return null;if(Array.isArray(o)&&o.length>0&&o[0]&&o[0].Caption!==undefined)return o;if(!Array.isArray(o)){var ks=Object.keys(o);for(var i=0;i<ks.length;i++){var r=fa(o[ks[i]],d+1);if(r)return r;}}return null;}' +
                         'var arr=fa(data,0);' +
+                        'function sendCaps(caps){var e=btoa(unescape(encodeURIComponent(JSON.stringify(caps))));window.open(\'' + toolUrl + '/#data=\'+e,\'_blank\');}' +
+                        'function parseAndSend(txt){' +
+                            'var caps=[];' +
+                            'try{var j=JSON.parse(txt);if(Array.isArray(j))caps=j.filter(function(x){return x&&x.Caption;});}catch(ex){}' +
+                            'if(!caps.length){' +
+                                'var lines=txt.split(\'\\n\');' +
+                                'for(var i=0;i<lines.length;i++){' +
+                                    'if(lines[i].indexOf(\' --> \')>-1){i++;var t=\'\';' +
+                                        'while(i<lines.length&&lines[i].trim()){t+=(t?\' \':\'\')+ lines[i].replace(/<[^>]+>/g,\'\').trim();i++;}' +
+                                        'if(t)caps.push({Caption:t});' +
+                                    '}' +
+                                '}' +
+                            '}' +
+                            'if(!caps.length){navigator.clipboard.writeText(txt.slice(0,600)).then(function(){alert(\'자막 형식을 파악하지 못했습니다.\\n응답 내용을 클립보드에 복사했으니 개발자에게 보내주세요!\');});return;}' +
+                            'sendCaps(caps);' +
+                        '}' +
                         'if(!arr){' +
                             'var avCaps=data.Delivery&&data.Delivery.AvailableCaptions;' +
-                            'if(avCaps&&avCaps.length>0){' +
-                                'navigator.clipboard.writeText(JSON.stringify(avCaps[0])).then(function(){alert(\'자막 메타데이터를 클립보드에 복사했습니다!\\n카카오톡이나 메모장에 붙여넣어 개발자에게 보내주세요.\');}).catch(function(){alert(\'AvailableCaptions[0]: \'+JSON.stringify(avCaps[0]));});' +
-                            '}else{' +
-                                'alert(\'이 강의에는 자막 데이터가 없습니다.\');' +
-                            '}' +
+                            'if(!avCaps||!avCaps.length){alert(\'이 강의에는 자막 데이터가 없습니다.\');return;}' +
+                            'var lang=avCaps[0].Language;' +
+                            'var cu=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/Captions.ashx?deliveryId=\'+id+\'&language=\'+lang;' +
+                            'fetch(cu,{credentials:\'include\'}).then(function(r){return r.text();}).then(parseAndSend).catch(function(err){alert(\'자막 파일 로드 실패: \'+err.message);});' +
                             'return;' +
                         '}' +
                         'var c=arr.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});' +
                         'if(!c.length){alert(\'자막 데이터를 찾을 수 없습니다.\');return;}' +
-                        'var e=btoa(unescape(encodeURIComponent(JSON.stringify(c))));' +
-                        'window.open(\'' + toolUrl + '/#data=\'+e,\'_blank\');' +
+                        'sendCaps(c);' +
                     '})' +
                     '.catch(function(err){alert(\'오류: \'+err.message);});' +
                     'return;' +
