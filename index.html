@@ -724,32 +724,20 @@
                             'sendCaps(caps);' +
                         '}' +
                         'if(!arr){' +
+                            // Step 1: performance timeline에서 이미 로드된 VTT URL 찾기
+                            'var perfRes=performance.getEntriesByType(\'resource\');' +
+                            'var capUrl=null;' +
+                            'for(var pi=0;pi<perfRes.length;pi++){' +
+                                'var pn=perfRes[pi].name.toLowerCase();' +
+                                'if(pn.indexOf(\'.vtt\')>-1||pn.indexOf(\'caption\')>-1||pn.indexOf(\'subtitle\')>-1){capUrl=perfRes[pi].name;break;}' +
+                            '}' +
+                            'if(capUrl){fetch(capUrl,{credentials:\'include\'}).then(function(r){return r.text();}).then(parseAndSend).catch(function(e){alert(\'VTT 로드 실패: \'+e.message);});return;}' +
+                            // Step 2: AvailableCaptions → Streams 데이터 클립보드 복사
                             'var avCaps=data.Delivery&&data.Delivery.AvailableCaptions;' +
                             'if(!avCaps||!avCaps.length){alert(\'이 강의에는 자막 데이터가 없습니다.\');return;}' +
-                            'var lang=avCaps[0].Language;' +
-                            'function tryVttUrl(vttUrl){' +
-                                'if(vttUrl&&!vttUrl.startsWith(\'http\'))vttUrl=\'https://wonkwang.ap.panopto.com\'+vttUrl;' +
-                                'fetch(vttUrl,{credentials:\'include\'}).then(function(r){return r.text();}).then(parseAndSend).catch(function(e){alert(\'VTT 로드 실패: \'+e.message);});' +
-                            '}' +
-                            'function tryRestApi(){' +
-                                'var ru=\'https://wonkwang.ap.panopto.com/Panopto/api/v1/sessions/\'+id+\'/captions\';' +
-                                'fetch(ru,{credentials:\'include\'}).then(function(r){return r.json();}).then(function(cl){' +
-                                    'var res=cl&&cl.Results?cl.Results:(Array.isArray(cl)?cl:null);' +
-                                    'var vtt=null;' +
-                                    'if(res)for(var i=0;i<res.length;i++){var u=res[i].Urls&&res[i].Urls.VttUrl||res[i].VttUrl||res[i].Url;if(u){vtt=u;break;}}' +
-                                    'if(vtt){tryVttUrl(vtt);return;}' +
-                                    'navigator.clipboard.writeText(JSON.stringify(cl).slice(0,600)).then(function(){alert(\'REST API 응답을 클립보드에 복사했습니다! 개발자에게 보내주세요.\');}).catch(function(){alert(\'REST API: \'+JSON.stringify(cl).slice(0,300));});' +
-                                '}).catch(function(e){' +
-                                    'var st=data.Delivery&&data.Delivery.Streams;' +
-                                    'var dbg=st&&st[0]?JSON.stringify(st[0]).slice(0,600):\'Streams 없음\';' +
-                                    'navigator.clipboard.writeText(dbg).then(function(){alert(\'모든 자막 API 실패.\\nStreams 정보를 클립보드에 복사했습니다!\');}).catch(function(){alert(dbg);});' +
-                                '});' +
-                            '}' +
-                            'var cu=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/Caption.ashx?ID=\'+id+\'&language=\'+lang;' +
-                            'fetch(cu,{credentials:\'include\'}).then(function(r){return r.text();}).then(function(txt){' +
-                                'if(txt.indexOf(\'<!DOCTYPE\')>-1||txt.indexOf(\'<html\')>-1){tryRestApi();return;}' +
-                                'parseAndSend(txt);' +
-                            '}).catch(function(){tryRestApi();});' +
+                            'var st=data.Delivery&&data.Delivery.Streams;' +
+                            'var dbg=\'[Streams 구조]\\n\'+(st&&st[0]?JSON.stringify(st[0]).slice(0,800):\'없음\');' +
+                            'navigator.clipboard.writeText(dbg).then(function(){alert(\'자막 URL을 자동으로 찾지 못했습니다.\\n\\n자막이 화면에 표시 중인지 확인 후 다시 클릭해 주세요.\\n(자막이 이미 표시 중이라면 Streams 구조를 클립보드에 복사했으니 개발자에게 보내주세요)\');}).catch(function(){alert(dbg);});' +
                             'return;' +
                         '}' +
                         'var c=arr.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});' +
