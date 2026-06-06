@@ -822,21 +822,28 @@
                     '}' +
                 '}' +
                 'if(!id){alert(\'강의 ID를 찾을 수 없습니다. 강의 영상이 재생 중인 페이지에서 실행해 주세요.\');return;}' +
-                'var bId=\'wku_bm_guide\';' +
-                'if(!document.getElementById(bId)){' +
-                    'var bDiv=document.createElement(\'div\');' +
-                    'bDiv.id=bId;' +
-                    'bDiv.style.cssText=\'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#1558d6;color:#fff;padding:14px 20px;font-size:15px;font-family:sans-serif;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,0.4)\';' +
-                    'var bTxt=document.createElement(\'span\');' +
-                    'bTxt.innerHTML=\'새 탭에서 Panopto가 열렸습니다. <b>그 탭으로 이동 후 북마크릿을 한 번 더 클릭</b>하면 자막이 추출됩니다!\';' +
-                    'var bBtn=document.createElement(\'button\');' +
-                    'bBtn.textContent=\'닫기\';' +
-                    'bBtn.style.cssText=\'flex-shrink:0;background:rgba(255,255,255,0.25);border:none;color:#fff;padding:4px 14px;cursor:pointer;border-radius:4px;font-size:14px\';' +
-                    'bBtn.onclick=function(){document.getElementById(\'wku_bm_guide\').remove();};' +
-                    'bDiv.appendChild(bTxt);bDiv.appendChild(bBtn);' +
-                    'document.body.appendChild(bDiv);' +
+                'var panoptoUrl=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer.aspx?id=\'+id;' +
+                'var nw=window.open(\'about:blank\',\'_blank\');' +
+                'if(nw){' +
+                    'var nb=nw.document.body;' +
+                    'nb.style.cssText=\'margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1558d6;color:#fff;font-family:sans-serif;gap:20px;padding:20px;text-align:center\';' +
+                    'var g1=nw.document.createElement(\'div\');' +
+                    'g1.style.cssText=\'font-size:24px;font-weight:700\';' +
+                    'g1.textContent=\'Panopto 강의 페이지가 열립니다\';' +
+                    'var g2=nw.document.createElement(\'div\');' +
+                    'g2.style.cssText=\'font-size:17px;line-height:1.7\';' +
+                    'g2.innerHTML=\'<b>페이지 로드 후 북마크릿을 한 번 더 클릭</b>하면<br>자막이 자동으로 추출됩니다!\';' +
+                    'var gbtn=nw.document.createElement(\'button\');' +
+                    'gbtn.textContent=\'지금 바로 이동\';' +
+                    'gbtn.style.cssText=\'padding:12px 36px;background:#fff;color:#1558d6;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer\';' +
+                    'gbtn.onclick=function(){nw.location.href=panoptoUrl;};' +
+                    'var gcnt=nw.document.createElement(\'div\');' +
+                    'gcnt.style.cssText=\'font-size:14px;opacity:.7\';' +
+                    'gcnt.textContent=\'3초 후 자동 이동...\';' +
+                    'nb.appendChild(g1);nb.appendChild(g2);nb.appendChild(gbtn);nb.appendChild(gcnt);' +
+                    'var gt=3;var giv=setInterval(function(){if(--gt<=0){clearInterval(giv);nw.location.href=panoptoUrl;}else{gcnt.textContent=gt+\'초 후 자동 이동...\';}},1000);' +
                 '}' +
-                'window.open(\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer.aspx?id=\'+id,\'_blank\');' +
+                'else{location.href=panoptoUrl;}' +
             '})();';
             document.getElementById('bookmarkletLink').href = bmCode;
             document.getElementById('panoptoModal').style.display = 'flex';
