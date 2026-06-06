@@ -705,7 +705,11 @@
                     'fetch(u,{credentials:\'include\'})' +
                     '.then(function(r){return r.json();})' +
                     '.then(function(data){' +
-                        'var c=data.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});' +
+                        'var arr=Array.isArray(data)?data:' +
+                        '(data.Delivery&&data.Delivery.Captions)?data.Delivery.Captions:' +
+                        '(data.Captions)?data.Captions:null;' +
+                        'if(!arr){alert(\'응답 구조 오류. 개발자에게 문의해 주세요.\\n\'+JSON.stringify(data).slice(0,200));return;}' +
+                        'var c=arr.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});' +
                         'if(!c.length){alert(\'자막 데이터를 찾을 수 없습니다.\');return;}' +
                         'var e=btoa(unescape(encodeURIComponent(JSON.stringify(c))));' +
                         'window.open(\'' + toolUrl + '/#data=\'+e,\'_blank\');' +
