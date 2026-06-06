@@ -723,7 +723,7 @@
                 '}' +
                 'if(!id){alert(\'강의 ID를 찾을 수 없습니다. 강의 영상이 재생 중인 페이지에서 실행해 주세요.\');return;}' +
                 'alert(\'Panopto 강의 페이지로 이동합니다.\\n이동 완료 후 북마크릿을 한 번 더 클릭해 주세요!\');' +
-                'location.href=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/Viewer.aspx?id=\'+id;' +
+                'location.href=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer.aspx?id=\'+id;' +
             '})();';
             document.getElementById('bookmarkletLink').href = bmCode;
             document.getElementById('panoptoModal').style.display = 'flex';
