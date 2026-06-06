@@ -241,7 +241,6 @@
             cursor: default;
             border: 1px solid rgba(255,255,255,0.3);
             user-select: none;
-            backdrop-filter: blur(4px);
         }
         .version-tag .version-tooltip {
             position: absolute;
@@ -285,9 +284,9 @@
             line-height: 1.65;
             margin-bottom: 3px;
         }
-        .version-tooltip .v-num { color: #3730a3 !important; font-weight: 700; flex-shrink: 0; }
-        .version-tooltip .v-name { color: #3730a3 !important; font-weight: 700; }
-        .version-tooltip .v-desc { color: #b0b8c8 !important; font-weight: 400; }
+        .version-tooltip .v-num { color: #312e81; font-weight: 700; flex-shrink: 0; }
+        .version-tooltip .v-name { color: #312e81; font-weight: 700; }
+        .version-tooltip .v-desc { color: #9ca3af; font-size: 0.75rem; }
 
         .modal-overlay {
             position: fixed;
@@ -375,19 +374,19 @@
 
         @media (max-width: 640px) {
             .version-tag .version-tooltip {
-                position: fixed !important;
-                top: 62px !important;
-                left: 1rem !important;
-                right: 1rem !important;
-                width: auto !important;
-                max-width: none !important;
-                transform: none !important;
-                transition: opacity 0.2s !important;
+                position: fixed;
+                top: 62px;
+                left: 1rem;
+                right: 1rem;
+                width: auto;
+                max-width: none;
+                transform: none;
+                transition: opacity 0.2s;
             }
             .version-tag:hover .version-tooltip {
-                opacity: 1 !important;
-                visibility: visible !important;
-                transform: none !important;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
             }
         }
 
