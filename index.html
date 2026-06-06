@@ -704,7 +704,7 @@
                     'id=p.get(\'id\');' +
                     'if(!id){alert(\'강의 ID를 찾을 수 없습니다.\');return;}' +
                     'var sent=false;var captured=false;' +
-                    'function sendCaps(caps){if(sent)return;sent=true;var e=btoa(unescape(encodeURIComponent(JSON.stringify(caps))));window.open(\'' + toolUrl + '/#data=\'+e,\'wku_subtitle_tool\');}' +
+                    'function sendCaps(caps){if(sent)return;sent=true;var e=btoa(unescape(encodeURIComponent(JSON.stringify(caps))));window.open(\'' + toolUrl + '/?_=\'+Date.now()+\'#data=\'+e,\'wku_subtitle_tool\');}' +
                     // window.fetch 인터셉터: 뷰어 자체의 주기적 DeliveryInfo 호출을 가로챔
                     'var origFetch=window.fetch;' +
                     'window.fetch=function(){' +
