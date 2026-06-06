@@ -724,20 +724,18 @@
                             'sendCaps(caps);' +
                         '}' +
                         'if(!arr){' +
-                            // Step 1: performance timeline에서 이미 로드된 VTT URL 찾기
+                            // .vtt 파일만 찾기 (Captions.ashx 등 404 URL 제외)
                             'var perfRes=performance.getEntriesByType(\'resource\');' +
                             'var capUrl=null;' +
                             'for(var pi=0;pi<perfRes.length;pi++){' +
                                 'var pn=perfRes[pi].name.toLowerCase();' +
-                                'if(pn.indexOf(\'.vtt\')>-1||pn.indexOf(\'caption\')>-1||pn.indexOf(\'subtitle\')>-1){capUrl=perfRes[pi].name;break;}' +
+                                'if(pn.indexOf(\'.vtt\')>-1||pn.indexOf(\'.webvtt\')>-1){capUrl=perfRes[pi].name;break;}' +
                             '}' +
                             'if(capUrl){fetch(capUrl,{credentials:\'include\'}).then(function(r){return r.text();}).then(parseAndSend).catch(function(e){alert(\'VTT 로드 실패: \'+e.message);});return;}' +
-                            // Step 2: AvailableCaptions → Streams 데이터 클립보드 복사
-                            'var avCaps=data.Delivery&&data.Delivery.AvailableCaptions;' +
-                            'if(!avCaps||!avCaps.length){alert(\'이 강의에는 자막 데이터가 없습니다.\');return;}' +
+                            // Streams[0] 구조 클립보드 복사
                             'var st=data.Delivery&&data.Delivery.Streams;' +
-                            'var dbg=\'[Streams 구조]\\n\'+(st&&st[0]?JSON.stringify(st[0]).slice(0,800):\'없음\');' +
-                            'navigator.clipboard.writeText(dbg).then(function(){alert(\'자막 URL을 자동으로 찾지 못했습니다.\\n\\n자막이 화면에 표시 중인지 확인 후 다시 클릭해 주세요.\\n(자막이 이미 표시 중이라면 Streams 구조를 클립보드에 복사했으니 개발자에게 보내주세요)\');}).catch(function(){alert(dbg);});' +
+                            'var dbg=st&&st[0]?JSON.stringify(st[0]):\'Streams 없음\';' +
+                            'navigator.clipboard.writeText(dbg).then(function(){alert(\'Streams[0] 구조를 클립보드에 복사했습니다!\\n개발자에게 보내주세요.\');}).catch(function(){alert(dbg.slice(0,400));});' +
                             'return;' +
                         '}' +
                         'var c=arr.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});' +
