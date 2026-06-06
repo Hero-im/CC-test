@@ -677,7 +677,7 @@
 
 <script>
         // Panopto URL hash receiver: auto-populate JSON input when redirected from bookmarklet
-        (function() {
+        function loadFromHash() {
             var hash = window.location.hash;
             if (!hash.startsWith('#data=')) return;
             try {
@@ -689,7 +689,9 @@
             } catch(e) {
                 console.error('Panopto 데이터 로드 실패:', e);
             }
-        })();
+        }
+        loadFromHash();
+        window.addEventListener('hashchange', loadFromHash);
 
         function openPanoptoModal() {
             const toolUrl = window.location.origin;
