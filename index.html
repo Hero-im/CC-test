@@ -25,6 +25,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            position: relative;
+            z-index: 100;
         }
         .logo { font-size: 1.25rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 8px; }
         .logo span {
@@ -359,12 +361,15 @@
 
         /* ===== 반응형 모바일 최적화 ===== */
 
-        /* 태블릿 (≤900px): 2열 → 1열 */
         @media (max-width: 900px) {
             main { grid-template-columns: 1fr; padding: 1.25rem; gap: 1.25rem; }
             textarea { min-height: 220px; }
             .text-output-display { min-height: 220px; }
-            .version-tag .version-tooltip { width: min(340px, calc(100vw - 2rem)); }
+            .version-tag .version-tooltip {
+                width: min(340px, calc(100vw - 2rem));
+                left: auto;
+                right: 0;
+            }
         }
 
         /* 모바일 (≤640px): 헤더·버튼·컨트롤 최적화 */
@@ -399,7 +404,8 @@
 
             /* 버전 툴팁: 화면 안으로 */
             .version-tag .version-tooltip {
-                left: 0;
+                left: auto;
+                right: 0;
                 width: calc(100vw - 1.5rem);
                 max-width: 340px;
             }
