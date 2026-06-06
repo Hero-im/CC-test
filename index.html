@@ -701,78 +701,103 @@
                     'var p=new URLSearchParams(location.search);' +
                     'id=p.get(\'id\');' +
                     'if(!id){alert(\'강의 ID를 찾을 수 없습니다.\');return;}' +
-                    // 0단계: 뷰어가 이미 로드한 메모리 데이터 탐색 (POST보다 우선)
-                    'var wTs=null;' +
-                    'var wDi=window.Data||window.deliveryInfo||window.pageData||window.serverData;' +
-                    'if(wDi&&wDi.Delivery&&wDi.Delivery.Timestamps&&wDi.Delivery.Timestamps.length>0){wTs=wDi.Delivery.Timestamps.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});}' +
-                    'if(!wTs||!wTs.length){var wks2=Object.keys(window);for(var wki=0;wki<wks2.length&&(!wTs||!wTs.length);wki++){try{var wv2=window[wks2[wki]];if(wv2&&typeof wv2===\'object\'&&!Array.isArray(wv2)&&wv2.Delivery&&wv2.Delivery.Timestamps&&wv2.Delivery.Timestamps.length>0){wTs=wv2.Delivery.Timestamps.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});}}catch(e){}}}' +
-                    'if(wTs&&wTs.length>0){var e0=btoa(unescape(encodeURIComponent(JSON.stringify(wTs))));window.open(\'' + toolUrl + '/#data=\'+e0,\'_blank\');return;}' +
-                    'var u=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/DeliveryInfo.aspx\';' +
-                    'var invId=\'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx\'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return(c===\'x\'?r:(r&0x3|0x8)).toString(16);});' +
-                    'var bdy=\'deliveryId=\'+encodeURIComponent(id)+\'&invocationId=\'+invId+\'&isPortableDevice=false&refreshAuthCookie=true&isInsideVle=false&responseType=json\';' +
-                    'fetch(u,{method:\'POST\',credentials:\'include\',headers:{\'Content-Type\':\'application/x-www-form-urlencoded\'},body:bdy})' +
-                    '.then(function(r){return r.json();})' +
-                    '.then(function(data){' +
-                        'function fa(o,d){if(d>6||!o||typeof o!==\'object\')return null;if(Array.isArray(o)&&o.length>0&&o[0]&&(o[0].Caption!==undefined||o[0].Text!==undefined))return o;if(!Array.isArray(o)){var ks=Object.keys(o);for(var i=0;i<ks.length;i++){var r=fa(o[ks[i]],d+1);if(r)return r;}}return null;}' +
-                        'var arr=fa(data,0);' +
-                        'function sendCaps(caps){var e=btoa(unescape(encodeURIComponent(JSON.stringify(caps))));window.open(\'' + toolUrl + '/#data=\'+e,\'_blank\');}' +
-                        'function parseAndSend(txt){' +
-                            'var caps=[];' +
-                            'try{var j=JSON.parse(txt);if(Array.isArray(j))caps=j.filter(function(x){return x&&x.Caption;});}catch(ex){}' +
-                            'if(!caps.length){' +
-                                'var lines=txt.split(\'\\n\');' +
-                                'for(var i=0;i<lines.length;i++){' +
-                                    'if(lines[i].indexOf(\' --> \')>-1){i++;var t=\'\';' +
-                                        'while(i<lines.length&&lines[i].trim()){t+=(t?\' \':\'\')+ lines[i].replace(/<[^>]+>/g,\'\').trim();i++;}' +
-                                        'if(t)caps.push({Caption:t});' +
+                    'var sent=false;var captured=false;' +
+                    'function sendCaps(caps){if(sent)return;sent=true;var e=btoa(unescape(encodeURIComponent(JSON.stringify(caps))));window.open(\'' + toolUrl + '/#data=\'+e,\'_blank\');}' +
+                    // window.fetch 인터셉터: 뷰어 자체의 주기적 DeliveryInfo 호출을 가로챔
+                    'var origFetch=window.fetch;' +
+                    'window.fetch=function(){' +
+                        'var args=arguments;' +
+                        'var p2=origFetch.apply(this,args);' +
+                        'var us=args[0];var urlStr=typeof us===\'string\'?us:(us&&us.url)||\'\';' +
+                        'if(!captured&&urlStr.indexOf(\'DeliveryInfo.aspx\')>-1){' +
+                            'return p2.then(function(resp){' +
+                                'var clone=resp.clone();' +
+                                'clone.json().then(function(d){' +
+                                    'if(!captured&&d&&d.Delivery&&d.Delivery.Timestamps&&d.Delivery.Timestamps.length>0){' +
+                                        'captured=true;window.fetch=origFetch;' +
+                                        'var caps=d.Delivery.Timestamps.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});' +
+                                        'if(caps.length>0)sendCaps(caps);' +
                                     '}' +
+                                '}).catch(function(){});' +
+                                'return resp;' +
+                            '});' +
+                        '}' +
+                        'return p2;' +
+                    '};' +
+                    // POST 폴백 함수
+                    'function doPost(){' +
+                        'window.fetch=origFetch;' +
+                        'var u=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/DeliveryInfo.aspx\';' +
+                        'var invId=\'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx\'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return(c===\'x\'?r:(r&0x3|0x8)).toString(16);});' +
+                        'var bdy=\'deliveryId=\'+encodeURIComponent(id)+\'&invocationId=\'+invId+\'&isPortableDevice=false&refreshAuthCookie=true&isInsideVle=false&responseType=json\';' +
+                        'origFetch(u,{method:\'POST\',credentials:\'include\',headers:{\'Content-Type\':\'application/x-www-form-urlencoded\'},body:bdy})' +
+                        '.then(function(r){return r.json();})' +
+                        '.then(function(data){' +
+                            'function fa(o,d){if(d>6||!o||typeof o!==\'object\')return null;if(Array.isArray(o)&&o.length>0&&o[0]&&(o[0].Caption!==undefined||o[0].Text!==undefined))return o;if(!Array.isArray(o)){var ks=Object.keys(o);for(var ki=0;ki<ks.length;ki++){var rv=fa(o[ks[ki]],d+1);if(rv)return rv;}}return null;}' +
+                            'var arr=fa(data,0);' +
+                            'function parseAndSend(txt){' +
+                                'var caps=[];' +
+                                'try{var j=JSON.parse(txt);if(Array.isArray(j))caps=j.filter(function(x){return x&&x.Caption;});}catch(ex){}' +
+                                'if(!caps.length){var lines=txt.split(\'\\n\');for(var li=0;li<lines.length;li++){if(lines[li].indexOf(\' --> \')>-1){li++;var t=\'\';while(li<lines.length&&lines[li].trim()){t+=(t?\' \':\'\')+ lines[li].replace(/<[^>]+>/g,\'\').trim();li++;}if(t)caps.push({Caption:t});}}}' +
+                                'if(!caps.length){navigator.clipboard.writeText(txt.slice(0,600)).then(function(){alert(\'자막 형식을 파악하지 못했습니다.\\n응답 내용을 클립보드에 복사했으니 개발자에게 보내주세요!\');});return;}' +
+                                'sendCaps(caps);' +
+                            '}' +
+                            'if(!arr){' +
+                                'var videos=document.querySelectorAll(\'video\');var tcaps=[];' +
+                                'for(var vi=0;vi<videos.length;vi++){var tts=videos[vi].textTracks;for(var ti=0;ti<tts.length;ti++){var trk=tts[ti];if(trk.cues&&trk.cues.length>0){for(var ci=0;ci<trk.cues.length;ci++){var ct=(trk.cues[ci].text||\'\').replace(/<[^>]+>/g,\'\').trim();if(ct)tcaps.push({Caption:ct});}}}}' +
+                                'if(tcaps.length>0){sendCaps(tcaps);return;}' +
+                                'var perfRes=performance.getEntriesByType(\'resource\');var capUrl=null;' +
+                                'for(var pi=0;pi<perfRes.length;pi++){var pn=perfRes[pi].name.toLowerCase();if(pn.indexOf(\'.vtt\')>-1||pn.indexOf(\'.webvtt\')>-1){capUrl=perfRes[pi].name;break;}}' +
+                                'if(capUrl){origFetch(capUrl,{credentials:\'include\'}).then(function(r){return r.text();}).then(parseAndSend).catch(function(e){alert(\'VTT 로드 실패: \'+e.message);});return;}' +
+                                'var sessId=data.SessionId;var avCaps=data.Delivery&&data.Delivery.AvailableCaptions;var lang2=avCaps&&avCaps[0]?avCaps[0].Language:10;' +
+                                'if(sessId){' +
+                                    'var cu3=\'https://wonkwang.ap.panopto.com/Panopto/Api/Sessions/\'+sessId+\'/captions\';' +
+                                    'origFetch(cu3,{credentials:\'include\'}).then(function(r3){if(!r3.ok)throw new Error(r3.status);return r3.text();})' +
+                                    '.then(function(txt3){if(!txt3||txt3.trim()===\'[]\')throw new Error(\'empty\');parseAndSend(txt3);})' +
+                                    '.catch(function(){' +
+                                        'var cu2=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/Captions.ashx?deliveryId=\'+sessId+\'&language=\'+lang2;' +
+                                        'origFetch(cu2,{credentials:\'include\'}).then(function(r){return r.text();}).then(function(txt2){' +
+                                            'if(txt2.indexOf(\'<!DOCTYPE\')>-1||txt2.indexOf(\'<html\')>-1){' +
+                                                'var dbg2=\'[DeliveryInfo JSON]\\n\'+JSON.stringify(data).slice(0,9000)+\'\\n\\n[SessionId]\\n\'+sessId;' +
+                                                'navigator.clipboard.writeText(dbg2).then(function(){alert(\'DeliveryInfo 응답 데이터를 클립보드에 복사했습니다!\\n여기에 붙여넣기 해 주세요.\');}).catch(function(){alert(\'클립보드 복사 실패\');});' +
+                                                'return;' +
+                                            '}' +
+                                            'parseAndSend(txt2);' +
+                                        '}).catch(function(){alert(\'자막을 불러오지 못했습니다.\');});' +
+                                    '});' +
+                                    'return;' +
                                 '}' +
+                                'alert(\'이 강의에는 자막 데이터가 없습니다.\');return;' +
                             '}' +
-                            'if(!caps.length){navigator.clipboard.writeText(txt.slice(0,600)).then(function(){alert(\'자막 형식을 파악하지 못했습니다.\\n응답 내용을 클립보드에 복사했으니 개발자에게 보내주세요!\');});return;}' +
-                            'sendCaps(caps);' +
+                            'var c=arr.filter(function(x){return x&&(x.Caption||x.Text);}).map(function(x){return{Caption:x.Caption||x.Text};});' +
+                            'if(!c.length){alert(\'자막 데이터를 찾을 수 없습니다.\');return;}' +
+                            'sendCaps(c);' +
+                        '})' +
+                        '.catch(function(err){alert(\'오류: \'+err.message);});' +
+                    '}' +
+                    // DOM 추출: 캡션 탭 클릭 후 자막 요소 읽기
+                    'function tryDom(){' +
+                        'var captionBtn=null;' +
+                        'var allEls=document.querySelectorAll(\'button,a,li,div,span,[role="tab"]\');' +
+                        'for(var bi=0;bi<allEls.length&&!captionBtn;bi++){' +
+                            'var bel=allEls[bi];var btxt=\'\';' +
+                            'for(var bj=0;bj<bel.childNodes.length;bj++){if(bel.childNodes[bj].nodeType===3)btxt+=bel.childNodes[bj].textContent;}' +
+                            'if(btxt.trim()===\'캡션\'&&bel.offsetParent)captionBtn=bel;' +
                         '}' +
-                        'if(!arr){' +
-                            // 0) video textTracks 확인 (자막이 화면에 표시 중인 경우)
-                            'var videos=document.querySelectorAll(\'video\');' +
-                            'var tcaps=[];' +
-                            'for(var vi=0;vi<videos.length;vi++){var tts=videos[vi].textTracks;for(var ti=0;ti<tts.length;ti++){var trk=tts[ti];if(trk.cues&&trk.cues.length>0){for(var ci=0;ci<trk.cues.length;ci++){var ct=(trk.cues[ci].text||\'\').replace(/<[^>]+>/g,\'\').trim();if(ct)tcaps.push({Caption:ct});}}}}' +
-                            'if(tcaps.length>0){sendCaps(tcaps);return;}' +
-                            // 1) .vtt 파일 직접 탐색
-                            'var perfRes=performance.getEntriesByType(\'resource\');' +
-                            'var capUrl=null;' +
-                            'for(var pi=0;pi<perfRes.length;pi++){var pn=perfRes[pi].name.toLowerCase();if(pn.indexOf(\'.vtt\')>-1||pn.indexOf(\'.webvtt\')>-1){capUrl=perfRes[pi].name;break;}}' +
-                            'if(capUrl){fetch(capUrl,{credentials:\'include\'}).then(function(r){return r.text();}).then(parseAndSend).catch(function(e){alert(\'VTT 로드 실패: \'+e.message);});return;}' +
-                            // 2) SessionId 기반 엔드포인트 시도
-                            'var sessId=data.SessionId;' +
-                            'var avCaps=data.Delivery&&data.Delivery.AvailableCaptions;' +
-                            'var lang2=avCaps&&avCaps[0]?avCaps[0].Language:10;' +
-                            'if(sessId){' +
-                                // 2a) /Panopto/Api/Sessions/<sessId>/captions (capital A, no version)
-                                'var cu3=\'https://wonkwang.ap.panopto.com/Panopto/Api/Sessions/\'+sessId+\'/captions\';' +
-                                'fetch(cu3,{credentials:\'include\'}).then(function(r3){if(!r3.ok)throw new Error(r3.status);return r3.text();})' +
-                                '.then(function(txt3){if(!txt3||txt3.trim()===\'[]\')throw new Error(\'empty\');parseAndSend(txt3);})' +
-                                '.catch(function(){' +
-                                    // 2b) Captions.ashx fallback
-                                    'var cu2=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/Captions.ashx?deliveryId=\'+sessId+\'&language=\'+lang2;' +
-                                    'fetch(cu2,{credentials:\'include\'}).then(function(r){return r.text();}).then(function(txt2){' +
-                                        'if(txt2.indexOf(\'<!DOCTYPE\')>-1||txt2.indexOf(\'<html\')>-1){' +
-                                            'var dbg2=\'[DeliveryInfo JSON]\\n\'+JSON.stringify(data).slice(0,9000)+\'\\n\\n[SessionId]\\n\'+sessId;' +
-                                            'navigator.clipboard.writeText(dbg2).then(function(){alert(\'DeliveryInfo 응답 데이터를 클립보드에 복사했습니다!\\n여기에 붙여넣기 해 주세요.\');}).catch(function(){alert(\'클립보드 복사 실패\');});' +
-                                            'return;' +
-                                        '}' +
-                                        'parseAndSend(txt2);' +
-                                    '}).catch(function(){alert(\'자막을 불러오지 못했습니다.\');});' +
-                                '});' +
-                                'return;' +
+                        'if(captionBtn)captionBtn.click();' +
+                        'setTimeout(function(){' +
+                            'if(sent||captured)return;' +
+                            'var caps=[];var seen={};' +
+                            'var els=document.querySelectorAll(\'[class*="caption"],[class*="Caption"],[class*="transcript"],[class*="Transcript"]\');' +
+                            'for(var i=0;i<els.length;i++){' +
+                                'var t=els[i].textContent.trim();' +
+                                'if(t.length>=5&&t.length<=400&&!seen[t]&&(!els[i].children||els[i].children.length<=2)){seen[t]=true;caps.push({Caption:t});}' +
                             '}' +
-                            'alert(\'이 강의에는 자막 데이터가 없습니다.\');' +
-                            'return;' +
-                        '}' +
-                        'var c=arr.filter(function(x){return x&&(x.Caption||x.Text);}).map(function(x){return{Caption:x.Caption||x.Text};});' +
-                        'if(!c.length){alert(\'자막 데이터를 찾을 수 없습니다.\');return;}' +
-                        'sendCaps(c);' +
-                    '})' +
-                    '.catch(function(err){alert(\'오류: \'+err.message);});' +
+                            'if(caps.length>=3){sendCaps(caps);return;}' +
+                            'setTimeout(function(){if(!sent&&!captured)doPost();},2300);' +
+                        '},700);' +
+                    '}' +
+                    'tryDom();' +
                     'return;' +
                 '}' +
                 'var f=document.querySelectorAll(\'iframe\');' +
