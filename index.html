@@ -755,7 +755,7 @@
                                     'origFetch(cu3,{credentials:\'include\'}).then(function(r3){if(!r3.ok)throw new Error(r3.status);return r3.text();})' +
                                     '.then(function(txt3){if(!txt3||txt3.trim()===\'[]\')throw new Error(\'empty\');parseAndSend(txt3);})' +
                                     '.catch(function(){' +
-                                        'var cu2=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/Captions.ashx?deliveryId=\'+sessId+\'&language=\'+lang2;' +
+                                        'var cu2=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer/Captions.ashx?deliveryId=\'+id+\'&language=\'+lang2;' +
                                         'origFetch(cu2,{credentials:\'include\'}).then(function(r){return r.text();}).then(function(txt2){' +
                                             'if(txt2.indexOf(\'<!DOCTYPE\')>-1||txt2.indexOf(\'<html\')>-1){' +
                                                 'var dbg2=\'[DeliveryInfo JSON]\\n\'+JSON.stringify(data).slice(0,9000)+\'\\n\\n[SessionId]\\n\'+sessId;' +
@@ -788,14 +788,27 @@
                         'setTimeout(function(){' +
                             'if(sent||captured)return;' +
                             'var caps=[];var seen={};' +
-                            'var els=document.querySelectorAll(\'[class*="caption"],[class*="Caption"],[class*="transcript"],[class*="Transcript"]\');' +
-                            'for(var i=0;i<els.length;i++){' +
-                                'var t=els[i].textContent.trim();' +
-                                'if(t.length>=5&&t.length<=400&&!seen[t]&&(!els[i].children||els[i].children.length<=2)){seen[t]=true;caps.push({Caption:t});}' +
+                            // 1단계: 클래스명 기반 셀렉터
+                            'var els=document.querySelectorAll(\'[class*="caption"],[class*="Caption"],[class*="transcript"],[class*="Transcript"],[class*="event-desc"],[class*="eventDesc"],[class*="event-text"],[class*="eventText"],[class*="caption-event"],[class*="captionEvent"]\');' +
+                            'for(var i=0;i<els.length;i++){var t=els[i].textContent.trim();if(t.length>=5&&t.length<=400&&!seen[t]){seen[t]=true;caps.push({Caption:t});}}' +
+                            'if(caps.length>=3){sendCaps(caps);return;}' +
+                            // 2단계: 사이드바 내 트리 워커로 한국어 텍스트 노드 수집
+                            'var root=captionBtn?captionBtn.closest(\'aside,[class*="panel"],[class*="sidebar"],[class*="side-panel"],[class*="left"]\'):null;' +
+                            'if(!root&&captionBtn){var anc=captionBtn.parentElement;for(var ai=0;ai<10&&anc&&anc!==document.body;ai++){if(anc.scrollHeight>300){root=anc;break;}anc=anc.parentElement;}}' +
+                            'if(root){' +
+                                'var walker=document.createTreeWalker(root,4,null,false);' +
+                                'var nd;' +
+                                'while((nd=walker.nextNode())){' +
+                                    'var t=nd.textContent.trim();' +
+                                    'var par=nd.parentElement;' +
+                                    'if(par&&par.offsetParent&&t.length>=10&&t.length<=400&&!seen[t]&&/[\\uAC00-\\uD7A3]{3,}/.test(t)){' +
+                                        'seen[t]=true;caps.push({Caption:t});' +
+                                    '}' +
+                                '}' +
                             '}' +
                             'if(caps.length>=3){sendCaps(caps);return;}' +
                             'setTimeout(function(){if(!sent&&!captured)doPost();},2300);' +
-                        '},700);' +
+                        '},1000);' +
                     '}' +
                     'tryDom();' +
                     'return;' +
