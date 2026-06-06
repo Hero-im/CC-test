@@ -708,8 +708,12 @@
                         'function fa(o,d){if(d>6||!o||typeof o!==\'object\')return null;if(Array.isArray(o)&&o.length>0&&o[0]&&o[0].Caption!==undefined)return o;if(!Array.isArray(o)){var ks=Object.keys(o);for(var i=0;i<ks.length;i++){var r=fa(o[ks[i]],d+1);if(r)return r;}}return null;}' +
                         'var arr=fa(data,0);' +
                         'if(!arr){' +
-                            'var dbg=\'[Panopto 구조]\\ntopKeys: \'+Object.keys(data).join(\', \')+\'\\nDelivery keys: \'+Object.keys(data.Delivery||{}).join(\', \');' +
-                            'navigator.clipboard.writeText(dbg).then(function(){alert(\'자막을 찾지 못했습니다.\\n구조 정보를 클립보드에 복사했습니다!\\n카카오톡이나 메모장에 붙여넣기 후 개발자에게 보내주세요.\');}).catch(function(){alert(\'자막을 찾지 못했습니다.\\n\'+dbg);});' +
+                            'var avCaps=data.Delivery&&data.Delivery.AvailableCaptions;' +
+                            'if(avCaps&&avCaps.length>0){' +
+                                'navigator.clipboard.writeText(JSON.stringify(avCaps[0])).then(function(){alert(\'자막 메타데이터를 클립보드에 복사했습니다!\\n카카오톡이나 메모장에 붙여넣어 개발자에게 보내주세요.\');}).catch(function(){alert(\'AvailableCaptions[0]: \'+JSON.stringify(avCaps[0]));});' +
+                            '}else{' +
+                                'alert(\'이 강의에는 자막 데이터가 없습니다.\');' +
+                            '}' +
                             'return;' +
                         '}' +
                         'var c=arr.filter(function(x){return x&&x.Caption;}).map(function(x){return{Caption:x.Caption};});' +
