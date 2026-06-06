@@ -702,7 +702,7 @@
                     'id=p.get(\'id\');' +
                     'if(!id){alert(\'강의 ID를 찾을 수 없습니다.\');return;}' +
                     'var sent=false;var captured=false;' +
-                    'function sendCaps(caps){if(sent)return;sent=true;var e=btoa(unescape(encodeURIComponent(JSON.stringify(caps))));window.open(\'' + toolUrl + '/#data=\'+e,\'_blank\');}' +
+                    'function sendCaps(caps){if(sent)return;sent=true;var e=btoa(unescape(encodeURIComponent(JSON.stringify(caps))));window.open(\'' + toolUrl + '/#data=\'+e,\'wku_subtitle_tool\');}' +
                     // window.fetch 인터셉터: 뷰어 자체의 주기적 DeliveryInfo 호출을 가로챔
                     'var origFetch=window.fetch;' +
                     'window.fetch=function(){' +
@@ -822,8 +822,8 @@
                     '}' +
                 '}' +
                 'if(!id){alert(\'강의 ID를 찾을 수 없습니다. 강의 영상이 재생 중인 페이지에서 실행해 주세요.\');return;}' +
-                'alert(\'Panopto 강의 페이지로 이동합니다.\\n이동 완료 후 북마크릿을 한 번 더 클릭해 주세요!\');' +
-                'location.href=\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer.aspx?id=\'+id;' +
+                'window.open(\'https://wonkwang.ap.panopto.com/Panopto/Pages/Viewer.aspx?id=\'+id,\'_blank\');' +
+                'alert(\'새 탭에서 Panopto 강의 페이지가 열렸습니다.\\n\\n그 탭으로 이동한 뒤 북마크릿을 한 번 더 클릭하면 자막이 추출됩니다!\');' +
             '})();';
             document.getElementById('bookmarkletLink').href = bmCode;
             document.getElementById('panoptoModal').style.display = 'flex';
