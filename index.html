@@ -285,9 +285,9 @@
             line-height: 1.65;
             margin-bottom: 3px;
         }
-        .version-tooltip .v-num { color: #3730a3; font-weight: 700; flex-shrink: 0; }
+        .version-tooltip .v-num { color: #3730a3 !important; font-weight: 700; flex-shrink: 0; }
         .version-tooltip .v-name { color: #3730a3 !important; font-weight: 700; }
-        .version-tooltip .v-desc { color: #94a3b8; }
+        .version-tooltip .v-desc { color: #b0b8c8 !important; font-weight: 400; }
 
         .modal-overlay {
             position: fixed;
@@ -369,27 +369,24 @@
             textarea { min-height: 220px; }
             .text-output-display { min-height: 220px; }
             .version-tag .version-tooltip {
-                left: 0;
-                right: auto;
-                width: calc(100vw - 2rem);
-                max-width: 340px;
+                width: min(340px, calc(100vw - 2rem));
             }
         }
 
         @media (max-width: 640px) {
             .version-tag .version-tooltip {
-                position: fixed;
-                top: 62px;
-                left: 1rem;
-                right: 1rem;
-                width: auto;
-                max-width: none;
+                position: fixed !important;
+                top: 62px !important;
+                left: 1rem !important;
+                right: 1rem !important;
+                width: auto !important;
+                max-width: none !important;
                 transform: none !important;
-                transition: opacity 0.2s;
+                transition: opacity 0.2s !important;
             }
             .version-tag:hover .version-tooltip {
-                opacity: 1;
-                visibility: visible;
+                opacity: 1 !important;
+                visibility: visible !important;
                 transform: none !important;
             }
         }
@@ -422,14 +419,6 @@
             /* 컨트롤 바 */
             .controls { padding: 0.75rem 1rem; }
             #submitBtn { padding: 0.65rem 1.1rem; font-size: 0.9rem; }
-
-            /* 버전 툴팁: 화면 안으로 */
-            .version-tag .version-tooltip {
-                left: 0;
-                right: auto;
-                width: calc(100vw - 1.5rem);
-                max-width: 340px;
-            }
 
             /* 모달: 하단 sheet 스타일 */
             .modal-overlay { align-items: flex-end; padding: 0; }
