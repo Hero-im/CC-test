@@ -110,8 +110,32 @@
         .corrected-word {
             color: #ef4444;
             font-weight: 700;
-            cursor: help;
+            cursor: pointer;
             border-bottom: 1.5px dashed #ef4444;
+        }
+
+        /* 직접 수정된 단어 강조 */
+        .edited-word {
+            color: #16a34a;
+            font-weight: 700;
+            cursor: pointer;
+            border-bottom: 1.5px dashed #16a34a;
+        }
+
+        /* 인라인 수정 입력 */
+        .word-edit-input {
+            display: inline;
+            border: none;
+            border-bottom: 2px solid #16a34a;
+            outline: none;
+            font-family: inherit;
+            font-size: inherit;
+            font-weight: 700;
+            line-height: inherit;
+            color: #16a34a;
+            background: #f0fdf4;
+            padding: 0 2px;
+            border-radius: 2px;
         }
 
         /* 교정 툴팁 */
@@ -451,12 +475,57 @@
             }
         }
 
-        // 교정 단어 툴팁
+        // 교정/수정 단어 툴팁 및 클릭 편집
         const correctionTooltip = document.getElementById('correctionTooltip');
+
+        function syncRawOutput() {
+            document.getElementById('textOutputRaw').value = document.getElementById('textOutput').innerText;
+        }
+
+        function startEdit(span) {
+            correctionTooltip.classList.remove('visible');
+            const isCorrected = span.classList.contains('corrected-word');
+            const currentText = span.textContent;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentText;
+            input.className = 'word-edit-input';
+            input.style.width = Math.max(currentText.length * 0.65 + 1, 3) + 'em';
+
+            function confirm() {
+                const newVal = input.value.trim();
+                if (!newVal) { input.replaceWith(span); return; }
+                span.textContent = newVal;
+                span.classList.remove('corrected-word', 'edited-word');
+                span.classList.add('edited-word');
+                span.dataset.edited = newVal;
+                input.replaceWith(span);
+                syncRawOutput();
+            }
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); confirm(); }
+                if (e.key === 'Escape') { input.replaceWith(span); }
+            });
+            input.addEventListener('blur', confirm);
+            input.addEventListener('input', function() {
+                input.style.width = Math.max(input.value.length * 0.65 + 1, 3) + 'em';
+            });
+
+            span.replaceWith(input);
+            input.focus();
+            input.select();
+        }
+
         document.addEventListener('mouseover', function(e) {
-            const target = e.target.closest('.corrected-word');
+            const target = e.target.closest('.corrected-word, .edited-word');
             if (!target) return;
-            correctionTooltip.textContent = `교정된 단어입니다.\n원본: ${target.dataset.original} → 교정: ${target.dataset.corrected}`;
+            if (target.classList.contains('edited-word')) {
+                correctionTooltip.textContent = `직접 수정된 단어입니다.\n수정값: ${target.dataset.edited}\n클릭하여 다시 수정할 수 있습니다.`;
+            } else {
+                correctionTooltip.textContent = `교정된 단어입니다.\n원본: ${target.dataset.original} → 교정: ${target.dataset.corrected}\n클릭하여 직접 수정할 수 있습니다.`;
+            }
             correctionTooltip.classList.add('visible');
         });
         document.addEventListener('mousemove', function(e) {
@@ -469,8 +538,13 @@
             correctionTooltip.style.top = y + 'px';
         });
         document.addEventListener('mouseout', function(e) {
-            if (!e.target.closest('.corrected-word')) return;
+            if (!e.target.closest('.corrected-word, .edited-word')) return;
             correctionTooltip.classList.remove('visible');
+        });
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('.corrected-word, .edited-word');
+            if (!target) return;
+            startEdit(target);
         });
 
         async function downloadTxt() {
