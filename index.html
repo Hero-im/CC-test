@@ -250,15 +250,15 @@
 
     <header>
         <div class="logo">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            <span>자막</span>추출기
+            ⚡ <span>자막파일</span>추출기
         </div>
+        <div style="font-size: 0.85rem; color: #6b7280; font-weight: 500;">AI Powered Workspace</div>
     </header>
 
     <main>
         <section class="panel">
             <div class="panel-header">
-                <div class="panel-title">JSON 입력</div>
+                <div class="panel-title">📥 1. JSON 데이터 입력</div>
             </div>
             <textarea id="jsonInput" placeholder='여기에 Network 탭에서 복사한 데이터를 붙여넣으세요.&#10;&#10;예시:&#10;[&#10;  { "Caption": "첫 번째 자막입니다..." },&#10;  { "Caption": "두 번째 자막입니다..." }&#10;]'></textarea>
             
@@ -278,10 +278,9 @@
 
         <section class="panel">
             <div class="panel-header">
-                <div class="panel-title">결과 텍스트</div>
+                <div class="panel-title">✨ 2. 최종 텍스트 결과</div>
                 <button class="btn btn-outline" onclick="downloadTxt()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    다운로드
+                    💾 TXT 다운로드
                 </button>
             </div>
             <div id="textOutput" class="text-output-display"><span class="placeholder-text">추출 및 교정된 텍스트가 이곳에 정리되어 나타납니다.</span></div>
@@ -291,7 +290,7 @@
             <div class="controls" style="justify-content: flex-start;">
                 <div class="status-wrapper">
                     <div id="loader" class="loader"></div>
-                    <span id="statusMsg">데이터를 입력해 주세요.</span>
+                    <span id="statusMsg">대기 중... 데이터 입력을 기다리고 있습니다.</span>
                 </div>
             </div>
         </section>
@@ -307,7 +306,6 @@
         }
 
         function parseAndRender(aiText) {
-            // <<원본::교정>> 마커 파싱
             const regex = /<<([^:>]+)::([^>]+)>>/g;
             let plainText = '';
             let htmlParts = [];
@@ -329,7 +327,6 @@
             plainText += remaining;
             if (remaining) htmlParts.push(escapeHtml(remaining).replace(/\n/g, '<br>'));
 
-            // 마커가 없으면(AI가 교정 없다고 판단) 그냥 원문 표시
             const html = htmlParts.length > 0
                 ? htmlParts.join('')
                 : escapeHtml(aiText).replace(/\n/g, '<br>');
@@ -343,6 +340,7 @@
             const rawOutput = document.getElementById('textOutputRaw');
             const statusMsg = document.getElementById('statusMsg');
             const useAI = document.getElementById('useAI').checked;
+
             const submitBtn = document.getElementById('submitBtn');
             const btnText = document.getElementById('btnText');
             const loader = document.getElementById('loader');
@@ -352,80 +350,104 @@
                 return;
             }
 
+            // 코드 실행이 멈추지 않도록 await 제거
             if ("Notification" in window && Notification.permission === "default") {
                 Notification.requestPermission();
             }
 
-            // 1. JSON 검사
-            let parsedData = [];
             try {
-                parsedData = JSON.parse(inputData);
-            } catch (error) {
-                statusMsg.innerText = "입력된 데이터가 올바른 JSON 형식이 아닙니다.";
-                return;
-            }
+                statusMsg.innerText = "🔍 JSON 파일 분석 및 텍스트 추출 중...";
+                const parsedData = JSON.parse(inputData);
+                const extractedText = parsedData.map(item => item.Caption).join(' ');
 
-            // AI 옵션이 꺼져있을 경우 전체 원본 텍스트 추출 후 바로 종료
-            const fullRawText = parsedData.map(item => item.Caption || '').join(' ');
-            if (!useAI) {
-                outputArea.innerHTML = escapeHtml(fullRawText).replace(/\n/g, '<br>');
-                rawOutput.value = fullRawText;
-                statusMsg.innerText = "텍스트 추출 완료 (교정 생략)";
-                return;
-            }
+                if (!useAI) {
+                    outputArea.innerHTML = escapeHtml(extractedText).replace(/\n/g, '<br>');
+                    rawOutput.value = extractedText;
+                    statusMsg.innerText = "✅ 텍스트 추출 완료! (AI 교정 생략됨)";
+                    return;
+                }
 
-            // --- AI 단일 처리 ---
-            outputArea.innerHTML = "";
-            rawOutput.value = "";
-            submitBtn.disabled = true;
-            btnText.innerText = "처리 중...";
-            loader.style.display = "block";
+                outputArea.innerHTML = "";
+                rawOutput.value = "";
+                
+                submitBtn.disabled = true;
+                btnText.innerText = "처리 중...";
+                loader.style.display = "block";
+                
+                let startTime = Date.now();
+                let seconds = 0;
+                let messageIndex = 0;
+                
+                const loadingMessages = [
+                    "🔍 JSON 파일에서 자막 텍스트 추출 완료...",
+                    "🤖 AI 문맥 분석 모델 가동 중...",
+                    "🧐 문장 간의 개연성 및 흐름 파악 중...",
+                    "✍️ 어색한 단어 및 잘못 인식된 오탈자 찾아내는 중...",
+                    "✨ 문맥에 맞게 자연스러운 문장으로 교정 중...",
+                    "🚀 거의 다 왔습니다! 최종 마무리 중..."
+                ];
 
-            let startTime = Date.now();
-            statusMsg.innerText = "분석 중...";
+                statusMsg.innerText = loadingMessages[0];
 
-            try {
+                const loadingInterval = setInterval(() => {
+                    seconds++;
+                    if (seconds % 2 === 0 && messageIndex < loadingMessages.length - 1) {
+                        messageIndex++;
+                        statusMsg.innerText = loadingMessages[messageIndex];
+                    }
+                }, 1000); 
+
                 const response = await fetch('/api/correct', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: fullRawText })
+                    body: JSON.stringify({ text: extractedText })
                 });
 
-                if (response.status === 429) throw new Error("AI 사용량 초과");
-                if (!response.ok) throw new Error(`서버 불안정 (${response.status})`);
+                clearInterval(loadingInterval);
+                submitBtn.disabled = false;
+                btnText.innerText = "자막 추출 시작";
+                loader.style.display = "none";
+                
+                let timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
+
+                if (response.status === 429) {
+                    statusMsg.innerText = "❌ 일일 사용량 초과: 원본 텍스트를 출력합니다.";
+                    outputArea.innerHTML = escapeHtml(extractedText).replace(/\n/g, '<br>');
+                    rawOutput.value = extractedText;
+                    return;
+                }
 
                 const resultData = await response.json();
-                if (resultData.result) {
+
+                if (response.ok) {
                     const { plainText, html } = parseAndRender(resultData.result);
                     outputArea.innerHTML = html;
                     rawOutput.value = plainText;
+                    statusMsg.innerText = `✅ AI 교정 완료 (총 소요시간: ${timeTaken}초)`;
+
+                    if ("Notification" in window && Notification.permission === "granted") {
+                        const notification = new Notification("✨ 자막 교정 완료!", {
+                            body: `AI가 자막 교정을 모두 끝마쳤습니다. \n소요시간: ${timeTaken}초\n클릭하여 결과를 확인하세요!`,
+                            icon: "https://cdn-icons-png.flaticon.com/512/2065/2065157.png"
+                        });
+
+                        notification.onclick = function() {
+                            window.focus();
+                        };
+                    }
+
                 } else {
-                    throw new Error("결과값 없음");
-                }
-
-                let timeTaken = ((Date.now() - startTime) / 1000).toFixed(1);
-                statusMsg.innerText = `완료 (${timeTaken}초)`;
-                submitBtn.disabled = false;
-                btnText.innerText = "자막 추출 시작";
-                loader.style.display = "none";
-
-                if ("Notification" in window && Notification.permission === "granted") {
-                    const notification = new Notification("자막 교정 완료", {
-                        body: `소요시간: ${timeTaken}초\n클릭하여 결과를 확인하세요!`,
-                        icon: "https://cdn-icons-png.flaticon.com/512/2065/2065157.png"
-                    });
-                    notification.onclick = function() { window.focus(); };
+                    statusMsg.innerText = "❌ 서버 오류 발생: 원본을 출력합니다.";
+                    outputArea.innerHTML = escapeHtml(extractedText).replace(/\n/g, '<br>');
+                    rawOutput.value = extractedText;
                 }
 
             } catch (error) {
+                statusMsg.innerText = "❌ 입력된 데이터가 올바른 JSON 형식이 아닙니다.";
+                console.error(error);
                 submitBtn.disabled = false;
                 btnText.innerText = "자막 추출 시작";
                 loader.style.display = "none";
-                statusMsg.innerText = `처리 실패 (${error.message})`;
-                const errorText = "--- [서버 오류로 인한 원본 텍스트입니다] ---\n\n" + fullRawText;
-                outputArea.innerHTML = escapeHtml(errorText).replace(/\n/g, '<br>');
-                rawOutput.value = errorText;
-                console.error("교정 에러:", error);
             }
         }
 
